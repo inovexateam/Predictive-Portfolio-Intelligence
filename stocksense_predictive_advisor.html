@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07090f;--bg2:#0d1118;--bg3:#121824;--bg4:#182030;--bg5:#1e2a3d;
+  --border:#ffffff0d;--border2:#ffffff18;--border3:#ffffff26;
+  --text:#dde4f0;--muted:#6b7a96;--dim:#3a4557;
+  --g:#00e5a0;--r:#ff4d6d;--a:#ffb700;--b:#38b6ff;--p:#b388ff;--t:#00d4cc;
+  --g2:#00e5a018;--r2:#ff4d6d18;--a2:#ffb70018;--b2:#38b6ff18;--p2:#b388ff18;
+  font-family:'Instrument Sans',sans-serif;
+  font-size:13px;color:var(--text);background:var(--bg);
+}
+
+body{min-height:100vh;overflow-x:hidden}
+
+/* Animated radar lines */
+.radar-bg{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.radar-bg::before{content:'';position:absolute;top:-200px;right:-200px;width:700px;height:700px;border-radius:50%;border:1px solid #00e5a008;animation:rotateRadar 20s linear infinite}
+.radar-bg::after{content:'';position:absolute;top:-100px;right:-100px;width:500px;height:500px;border-radius:50%;border:1px solid #38b6ff06;animation:rotateRadar 14s linear infinite reverse}
+@keyframes rotateRadar{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+.app{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:16px}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:14px 18px;background:var(--bg2);border:1px solid var(--border2);border-radius:14px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:34px;height:34px;background:conic-gradient(#00e5a0,#38b6ff,#b388ff,#00e5a0);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;animation:spin 8s linear infinite}
+@keyframes spin{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(360deg)}}
+.brand-name{font-size:15px;font-weight:600;letter-spacing:-.3px}
+.brand-tag{font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase}
+.hdr-stats{display:flex;gap:20px}
+.hdr-stat{text-align:right}
+.hdr-stat-val{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500}
+.hdr-stat-lbl{font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.live-chip{display:flex;align-items:center;gap:5px;padding:5px 10px;background:var(--g2);border:1px solid #00e5a030;border-radius:20px;font-size:10px;color:var(--g);letter-spacing:.5px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--g);animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #00e5a060}50%{transform:scale(1.1);box-shadow:0 0 0 4px transparent}}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;margin-bottom:16px;padding:3px;background:var(--bg2);border:1px solid var(--border);border-radius:10px}
+.tab{flex:1;padding:8px 4px;text-align:center;font-size:11px;font-weight:500;color:var(--muted);border-radius:8px;cursor:pointer;transition:all .2s;letter-spacing:.2px}
+.tab.on{background:var(--bg5);color:var(--text);border:1px solid var(--border3)}
+.badge-count{display:inline-flex;width:16px;height:16px;align-items:center;justify-content:center;background:var(--r);color:#fff;border-radius:50%;font-size:9px;margin-left:4px;font-family:'IBM Plex Mono',monospace}
+
+/* Prediction card — the star component */
+.pred-card{position:relative;overflow:hidden;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:18px;margin-bottom:10px;transition:border-color .2s,transform .15s;cursor:pointer}
+.pred-card:hover{border-color:var(--border3);transform:translateY(-1px)}
+.pred-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.pred-card.buy::before{background:linear-gradient(90deg,transparent,var(--g),transparent)}
+.pred-card.sell::before{background:linear-gradient(90deg,transparent,var(--r),transparent)}
+.pred-card.hold::before{background:linear-gradient(90deg,transparent,var(--a),transparent)}
+
+.pc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.pc-sym{font-size:18px;font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:-.5px}
+.pc-name{font-size:11px;color:var(--muted);margin-top:2px}
+.pc-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+
+.signal-badge{padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.5px;font-family:'IBM Plex Mono',monospace}
+.sb-buy{background:var(--g2);color:var(--g);border:1px solid #00e5a040}
+.sb-sell{background:var(--r2);color:var(--r);border:1px solid #ff4d6d40}
+.sb-hold{background:var(--a2);color:var(--a);border:1px solid #ffb70040}
+
+/* Probability gauge */
+.prob-section{margin-bottom:14px}
+.prob-label{display:flex;justify-content:space-between;margin-bottom:6px;font-size:11px}
+.prob-track{height:8px;background:var(--bg4);border-radius:4px;overflow:hidden;position:relative}
+.prob-fill{height:100%;border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.prob-markers{position:relative;height:12px;margin-top:3px}
+.prob-marker{position:absolute;font-size:9px;color:var(--dim);transform:translateX(-50%)}
+
+/* Confidence ring */
+.conf-ring{position:relative;width:52px;height:52px}
+.conf-ring svg{transform:rotate(-90deg)}
+.conf-ring-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600}
+
+/* Factor chips */
+.factors{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.factor{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:500;display:flex;align-items:center;gap:4px}
+.f-up{background:var(--g2);color:var(--g);border:1px solid #00e5a020}
+.f-dn{background:var(--r2);color:var(--r);border:1px solid #ff4d6d20}
+.f-nt{background:var(--bg4);color:var(--muted);border:1px solid var(--border)}
+
+/* Reasoning block */
+.reasoning{background:var(--bg3);border-radius:8px;padding:12px;font-size:12px;line-height:1.75;color:var(--text);border-left:2px solid}
+.reasoning.buy{border-color:var(--g)}
+.reasoning.sell{border-color:var(--r)}
+.reasoning.hold{border-color:var(--a)}
+
+/* Price targets */
+.targets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.target-box{background:var(--bg4);border-radius:8px;padding:10px;text-align:center}
+.target-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.target-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500}
+
+/* Summary metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px}
+.metric-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.metric-val{font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:600}
+.metric-sub{font-size:10px;margin-top:3px}
+
+/* Prediction grid view */
+.pg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ML Model card */
+.model-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px}
+.model-title{font-size:12px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.model-chip{font-size:9px;padding:2px 8px;border-radius:4px;background:var(--p2);color:var(--p);border:1px solid #b388ff20;letter-spacing:.4px}
+
+/* Movers */
+.mover-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.mover-row:last-child{border-bottom:none}
+.mover-sym{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;width:90px}
+.mover-bar-track{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.mover-fill{height:100%;border-radius:3px}
+.mover-pct{font-family:'IBM Plex Mono',monospace;font-size:11px;width:44px;text-align:right}
+
+/* AI chat */
+.chat-wrap{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:16px}
+.chat-hdr{display:flex;align-items:center;gap:10px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.ai-avatar{width:36px;height:36px;background:conic-gradient(#b388ff,#38b6ff,#00e5a0);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;animation:spin 6s linear infinite}
+.chat-msgs{max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;padding-right:2px}
+.chat-msgs::-webkit-scrollbar{width:3px}
+.chat-msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.msg{display:flex;gap:8px;animation:msgIn .25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}}
+.msg-av{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.msg-u .msg-av{background:var(--b2);border:1px solid #38b6ff30}
+.msg-a .msg-av{background:var(--p2);border:1px solid #b388ff30}
+.msg-bub{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.65;max-width:88%}
+.msg-u{flex-direction:row-reverse}
+.msg-u .msg-bub{background:var(--bg4)}
+.typing span{display:inline-block;width:5px;height:5px;background:var(--muted);border-radius:50%;animation:tk 1.4s infinite;margin:0 1px}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes tk{0%,80%,100%{transform:scale(.7);opacity:.3}40%{transform:scale(1);opacity:1}}
+.chat-row{display:flex;gap:8px}
+.chat-inp{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;padding:9px 13px;font-size:12px;color:var(--text);font-family:'Instrument Sans',sans-serif;outline:none;transition:border .2s}
+.chat-inp:focus{border-color:#38b6ff40}
+.chat-inp::placeholder{color:var(--dim)}
+.send{background:linear-gradient(135deg,#38b6ff,#00e5a0);border:none;border-radius:9px;width:38px;cursor:pointer;color:#07090f;font-size:15px;font-weight:700;transition:opacity .2s}
+.send:hover{opacity:.85}
+.send:disabled{opacity:.35}
+.quick-asks{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.qa{padding:5px 10px;background:var(--bg4);border:1px solid var(--border2);border-radius:20px;font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s}
+.qa:hover{color:var(--text);border-color:var(--border3)}
+
+/* views */
+.view{display:none}.view.on{display:block}
+
+/* Section label */
+.slbl{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+
+/* Animated count */
+@keyframes countUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:countUp .4s ease forwards}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+</style>
+
+<div class="radar-bg"></div>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="brand">
+    <div class="brand-mark">◈</div>
+    <div>
+      <div class="brand-name">StockSense AI</div>
+      <div class="brand-tag">Predictive Portfolio Intelligence · NSE/BSE</div>
+    </div>
+  </div>
+  <div class="hdr-stats">
+    <div class="hdr-stat">
+      <div class="hdr-stat-val" style="color:var(--g)">+₹38,240</div>
+      <div class="hdr-stat-lbl">Today's Gain</div>
+    </div>
+    <div class="hdr-stat">
+      <div class="hdr-stat-val">74<span style="font-size:11px;color:var(--muted)">/100</span></div>
+      <div class="hdr-stat-lbl">Portfolio Score</div>
+    </div>
+    <div class="live-chip"><div class="pulse"></div>PRE-MARKET 08:43</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" onclick="sw('recommendations')">🎯 Recommendations</div>
+  <div class="tab" onclick="sw('predictions')">📊 Predictions</div>
+  <div class="tab" onclick="sw('movers')">⚡ Pre-Market Movers</div>
+  <div class="tab" onclick="sw('advisor')">✦ AI Advisor</div>
+</div>
+
+<!-- ════ RECOMMENDATIONS VIEW ════ -->
+<div id="v-recommendations" class="view on">
+  <div class="metrics">
+    <div class="metric"><div class="metric-lbl">Active Signals</div><div class="metric-val anim">8</div><div class="metric-sub" style="color:var(--muted)">2 Buy · 1 Sell · 5 Hold</div></div>
+    <div class="metric"><div class="metric-lbl">Avg Confidence</div><div class="metric-val anim" style="color:var(--g)">71%</div><div class="metric-sub" style="color:var(--muted)">High conviction</div></div>
+    <div class="metric"><div class="metric-lbl">Win Rate (30d)</div><div class="metric-val anim" style="color:var(--b)">68%</div><div class="metric-sub" style="color:var(--muted)">54 signals tracked</div></div>
+    <div class="metric"><div class="metric-lbl">Alerts Sent</div><div class="metric-val anim">4</div><div class="metric-sub" style="color:var(--muted)">Pre-market · 08:30 AM</div></div>
+  </div>
+  <div id="rec-list"></div>
+</div>
+
+<!-- ════ PREDICTIONS VIEW ════ -->
+<div id="v-predictions" class="view">
+  <div class="model-card">
+    <div class="model-title">
+      <span style="color:var(--p)">◈</span> ML Prediction Engine
+      <span class="model-chip">ENSEMBLE MODEL</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">LSTM (Price)</div>
+        <div style="font-family:'IBM Plex Mono';font-size:14px;color:var(--b)">73%</div>
+        <div style="font-size:9px;color:var(--dim)">accuracy 30d</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">NLP Sentiment</div>
+        <div style="font-family:'IBM Plex Mono';font-size:14px;color:var(--p)">68%</div>
+        <div style="font-size:9px;color:var(--dim)">accuracy 30d</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Technical TA</div>
+        <div style="font-family:'IBM Plex Mono';font-size:14px;color:var(--t)">71%</div>
+        <div style="font-size:9px;color:var(--dim)">accuracy 30d</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Ensemble</div>
+        <div style="font-family:'IBM Plex Mono';font-size:14px;color:var(--g)">76%</div>
+        <div style="font-size:9px;color:var(--dim)">accuracy 30d</div>
+      </div>
+    </div>
+  </div>
+  <div id="pred-grid" class="pg-grid"></div>
+</div>
+
+<!-- ════ MOVERS VIEW ════ -->
+<div id="v-movers" class="view">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div class="model-card">
+      <div class="model-title"><span style="color:var(--g)">↑</span> Expected Gainers Today</div>
+      <div id="gainers-list"></div>
+    </div>
+    <div class="model-card">
+      <div class="model-title"><span style="color:var(--r)">↓</span> Expected Pressure Today</div>
+      <div id="losers-list"></div>
+    </div>
+  </div>
+  <div class="model-card" style="margin-top:10px">
+    <div class="model-title">⚡ Unusual Activity Alerts <span class="model-chip">BULK/BLOCK DEALS</span></div>
+    <div id="unusual-list"></div>
+  </div>
+</div>
+
+<!-- ════ AI ADVISOR VIEW ════ -->
+<div id="v-advisor" class="view">
+  <div class="chat-wrap">
+    <div class="chat-hdr">
+      <div class="ai-avatar">◈</div>
+      <div>
+        <div style="font-size:13px;font-weight:600">Decision Brain</div>
+        <div style="font-size:10px;color:var(--muted)">Claude-powered · Portfolio-aware · Real-time</div>
+      </div>
+      <div style="margin-left:auto;font-size:10px;color:var(--g);background:var(--g2);padding:4px 10px;border-radius:20px;border:1px solid #00e5a025">Context loaded</div>
+    </div>
+    <div class="quick-asks">
+      <div class="qa" onclick="qa(this)">Should I act on today's BUY signals?</div>
+      <div class="qa" onclick="qa(this)">What's my biggest risk right now?</div>
+      <div class="qa" onclick="qa(this)">Explain the Tata Steel SELL signal</div>
+      <div class="qa" onclick="qa(this)">Which stock has highest upside potential?</div>
+    </div>
+    <div class="chat-msgs" id="msgs"></div>
+    <div class="chat-row">
+      <input class="chat-inp" id="cinp" placeholder="Ask anything about your portfolio or today's market…" />
+      <button class="send" id="sbtn" onclick="sendMsg()">↑</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const STOCKS = [
+  {sym:'INFY',name:'Infosys Ltd',sector:'IT',style:'Long-term',ltp:1612,avg:1420,
+   signal:'BUY',conf:84,upProb:84,targets:{sl:1560,tp1:1720,tp2:1840},
+   factors:[{l:'Earnings Beat +6.2%',t:'up'},{l:'FII Accumulation',t:'up'},{l:'RSI Recovery',t:'up'},{l:'Guidance Upgraded',t:'up'},{l:'MACD Bullish',t:'up'}],
+   reason:'Q3 EPS beat consensus by 6.2%. Revenue guidance raised to 4–7% growth. Block deals show ₹420Cr institutional buying. RSI at 52 recovering from oversold. Chart base breakout above ₹1,595 confirmed on volume.',
+   scores:{fund:88,tech:79,sent:84,vol:72},change:'+2.1%',
+   aiPred:'Strong upward momentum over 5–15 trading sessions. Target ₹1,720 (near-term).'},
+  {sym:'HDFC',name:'HDFC Bank',sector:'Banking',style:'Long-term',ltp:1743,avg:1580,
+   signal:'BUY',conf:78,upProb:78,targets:{sl:1700,tp1:1820,tp2:1950},
+   factors:[{l:'NIM Expansion',t:'up'},{l:'Valuation Discount',t:'up'},{l:'Resistance Breakout',t:'up'},{l:'RBI Neutral',t:'nt'},{l:'Credit Quality Stable',t:'up'}],
+   reason:'NIM expected to expand 8bps in Q4. P/E at 17.2x vs 5-yr avg of 22x — deep discount. Breakout above ₹1,720 resistance on 2.3x avg volume. GNPA at 1.24%, improving.',
+   scores:{fund:91,tech:74,sent:78,vol:61},change:'+1.4%',
+   aiPred:'Valuation rerating candidate. 12-month target ₹1,950.'},
+  {sym:'TATASTEEL',name:'Tata Steel',sector:'Metals',style:'Swing',ltp:112,avg:128,
+   signal:'SELL',conf:81,upProb:28,targets:{sl:118,tp1:102,tp2:94},
+   factors:[{l:'EBITDA -18% QoQ',t:'dn'},{l:'China Demand Weak',t:'dn'},{l:'FII Selling',t:'dn'},{l:'MACD Cross',t:'dn'},{l:'Coking Coal Costs',t:'dn'}],
+   reason:'Q3 EBITDA down 18% QoQ. China HRC prices at 14-month low, impacting export realizations. 5-session FII net sell of ₹680Cr. MACD bearish crossover below signal line. Support at ₹108 likely to break.',
+   scores:{fund:44,tech:38,sent:31,vol:82},change:'-1.8%',
+   aiPred:'Continued downside likely. Exit position; re-enter below ₹95.'},
+  {sym:'RELIANCE',name:'Reliance Industries',sector:'Energy',style:'Long-term',ltp:2734,avg:2450,
+   signal:'HOLD',conf:62,upProb:55,targets:{sl:2680,tp1:2800,tp2:2950},
+   factors:[{l:'Jio Growth Stable',t:'up'},{l:'Retail Segment Strong',t:'up'},{l:'New Energy Unclear',t:'nt'},{l:'Range-Bound Chart',t:'nt'},{l:'No Near Catalyst',t:'nt'}],
+   reason:'Mixed signals. Jio subscriber addition steady at 4.2M/month. Retail EBITDA +11% YoY. New energy capex timeline still unclear. Stock trading in ₹2,650–₹2,780 range; no breakout trigger visible.',
+   scores:{fund:82,tech:67,sent:71,vol:55},change:'+0.4%',
+   aiPred:'Sideways to mild positive. Wait for breakout above ₹2,800.'},
+  {sym:'BAJFINANCE',name:'Bajaj Finance',sector:'NBFC',style:'Swing',ltp:7234,avg:6800,
+   signal:'HOLD',conf:59,upProb:58,targets:{sl:7050,tp1:7500,tp2:7800},
+   factors:[{l:'AUM Growth 28%',t:'up'},{l:'NPA Slightly Up',t:'dn'},{l:'Premium Valuation',t:'nt'},{l:'Sector Rotation Risk',t:'dn'}],
+   reason:'AUM growth of 28% YoY remains strong. However NPA ratio ticked up 10bps, and valuation at 5.2x book is stretched. Near-term outlook mixed pending RBI stance.',
+   scores:{fund:76,tech:65,sent:69,vol:58},change:'+0.8%',
+   aiPred:'Hold for swing traders. Monitor NPA trend closely next quarter.'},
+];
+
+const PRED_DATA = [
+  {sym:'INFY',prob:84,dir:'up',horizon:'5 days',range:'₹1,590–₹1,720',momentum:'Strong'},
+  {sym:'HDFC',prob:78,dir:'up',horizon:'10 days',range:'₹1,720–₹1,820',momentum:'Moderate'},
+  {sym:'TATASTEEL',prob:72,dir:'down',horizon:'5 days',range:'₹102–₹114',momentum:'Bearish'},
+  {sym:'RELIANCE',prob:55,dir:'up',horizon:'15 days',range:'₹2,700–₹2,800',momentum:'Neutral'},
+  {sym:'ITC',prob:63,dir:'up',horizon:'10 days',range:'₹460–₹490',momentum:'Mild'},
+  {sym:'BAJFINANCE',prob:58,dir:'up',horizon:'10 days',range:'₹7,100–₹7,500',momentum:'Mixed'},
+];
+
+const GAINERS=[
+  {sym:'INFY',prob:84,pct:'+2.1%',reason:'Earnings catalyst'},
+  {sym:'HDFC',prob:78,pct:'+1.4%',reason:'Breakout continuation'},
+  {sym:'ITC',prob:63,pct:'+1.0%',reason:'Defensive accumulation'},
+  {sym:'BAJFINANCE',prob:58,pct:'+0.8%',reason:'Sector rebound'},
+];
+const LOSERS=[
+  {sym:'TATASTEEL',prob:72,pct:'-1.8%',reason:'Fundamental weakness'},
+  {sym:'WIPRO',prob:56,pct:'-0.9%',reason:'Margin headwinds'},
+  {sym:'ONGC',prob:51,pct:'-0.5%',reason:'Oil price pressure'},
+];
+const UNUSUAL=[
+  {sym:'INFY',type:'Block Deal',detail:'₹420 Cr buy · LIC (estimated)','side':'buy'},
+  {sym:'TATASTEEL',type:'Bulk Deal','detail':'₹230 Cr sell · FII outflow','side':'sell'},
+  {sym:'SUNPHARMA',type:'High Volume','detail':'3.4x avg volume · Watchlist trigger','side':'watch'},
+];
+
+// ── Render Recommendations ──
+function renderRecs(){
+  document.getElementById('rec-list').innerHTML = STOCKS.map(s=>{
+    const cls = s.signal==='BUY'?'buy':s.signal==='SELL'?'sell':'hold';
+    const sbCls = `sb-${cls}`;
+    const probColor = s.signal==='BUY'?'var(--g)':s.signal==='SELL'?'var(--r)':'var(--a)';
+    const factors = s.factors.map(f=>`<span class="factor f-${f.t}">${f.t==='up'?'↑':f.t==='dn'?'↓':'→'} ${f.l}</span>`).join('');
+    const pl = ((s.ltp-s.avg)/s.avg*100).toFixed(1);
+    const isUp = s.ltp>=s.avg;
+
+    return `<div class="pred-card ${cls}" onclick="openStock('${s.sym}')">
+      <div class="pc-top">
+        <div>
+          <div class="pc-sym">${s.sym} <span style="font-size:11px;color:${isUp?'var(--g)':'var(--r)'};font-weight:400">${s.change}</span></div>
+          <div class="pc-name">${s.name} · ${s.sector} · ${s.style}</div>
+        </div>
+        <div class="pc-right">
+          <span class="signal-badge ${sbCls}">${s.signal}</span>
+          <span style="font-size:10px;color:var(--muted)">${s.conf}% confidence</span>
+        </div>
+      </div>
+
+      <div class="prob-section">
+        <div class="prob-label">
+          <span style="color:var(--muted)">Upward probability</span>
+          <span style="font-family:'IBM Plex Mono';color:${probColor};font-weight:600">${s.upProb}%</span>
+        </div>
+        <div class="prob-track">
+          <div class="prob-fill" style="width:${s.upProb}%;background:${probColor}"></div>
+        </div>
+        <div class="prob-markers">
+          <div class="prob-marker" style="left:33%">Bearish</div>
+          <div class="prob-marker" style="left:50%">Neutral</div>
+          <div class="prob-marker" style="left:67%">Bullish</div>
+        </div>
+      </div>
+
+      <div class="factors">${factors}</div>
+
+      <div class="reasoning ${cls}">${s.reason}</div>
+
+      <div class="targets">
+        <div class="target-box">
+          <div class="target-lbl">Stop Loss</div>
+          <div class="target-val" style="color:var(--r)">₹${s.targets.sl.toLocaleString()}</div>
+        </div>
+        <div class="target-box">
+          <div class="target-lbl">Target 1</div>
+          <div class="target-val" style="color:var(--g)">₹${s.targets.tp1.toLocaleString()}</div>
+        </div>
+        <div class="target-box">
+          <div class="target-lbl">Target 2</div>
+          <div class="target-val" style="color:var(--t)">₹${s.targets.tp2.toLocaleString()}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render Predictions grid ──
+function renderPreds(){
+  document.getElementById('pred-grid').innerHTML = PRED_DATA.map(p=>{
+    const s = STOCKS.find(x=>x.sym===p.sym)||{};
+    const isUp = p.dir==='up';
+    const color = isUp?'var(--g)':'var(--r)';
+    const r = 20, circ = 2*Math.PI*r;
+    const dash = (p.prob/100)*circ;
+    return `<div class="model-card" style="margin-bottom:0">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div style="font-family:'IBM Plex Mono';font-size:16px;font-weight:600">${p.sym}</div>
+          <div style="font-size:10px;color:var(--muted)">${s.name||''}</div>
+        </div>
+        <div style="text-align:center">
+          <svg width="48" height="48" viewBox="0 0 48 48">
+            <circle cx="24" cy="24" r="${r}" fill="none" stroke="var(--bg4)" stroke-width="4"/>
+            <circle cx="24" cy="24" r="${r}" fill="none" stroke="${color}" stroke-width="4"
+              stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+              stroke-dashoffset="${circ/4}" stroke-linecap="round"/>
+            <text x="24" y="28" text-anchor="middle" fill="${color}" font-size="11" font-family="IBM Plex Mono" font-weight="600">${p.prob}%</text>
+          </svg>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-size:10px;margin-bottom:10px">
+        <div style="background:var(--bg3);border-radius:6px;padding:7px">
+          <div style="color:var(--muted);margin-bottom:2px">Direction</div>
+          <div style="color:${color};font-weight:600">${p.dir==='up'?'↑ UPWARD':'↓ DOWNWARD'}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:7px">
+          <div style="color:var(--muted);margin-bottom:2px">Horizon</div>
+          <div style="font-family:'IBM Plex Mono'">${p.horizon}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:6px;padding:7px">
+          <div style="color:var(--muted);margin-bottom:2px">Momentum</div>
+          <div style="color:${p.momentum==='Bearish'?'var(--r)':p.momentum==='Neutral'||p.momentum==='Mixed'?'var(--a)':'var(--g)'}">${p.momentum}</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted)">Expected range: <span style="color:var(--text);font-family:'IBM Plex Mono'">${p.range}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render Movers ──
+function renderMovers(){
+  document.getElementById('gainers-list').innerHTML = GAINERS.map(g=>`
+    <div class="mover-row">
+      <div class="mover-sym">${g.sym}</div>
+      <div class="mover-bar-track"><div class="mover-fill" style="width:${g.prob}%;background:var(--g)"></div></div>
+      <div class="mover-pct" style="color:var(--g)">${g.pct}</div>
+      <div style="font-size:9px;color:var(--muted);width:110px;text-align:right">${g.reason}</div>
+    </div>`).join('');
+
+  document.getElementById('losers-list').innerHTML = LOSERS.map(g=>`
+    <div class="mover-row">
+      <div class="mover-sym">${g.sym}</div>
+      <div class="mover-bar-track"><div class="mover-fill" style="width:${g.prob}%;background:var(--r)"></div></div>
+      <div class="mover-pct" style="color:var(--r)">${g.pct}</div>
+      <div style="font-size:9px;color:var(--muted);width:110px;text-align:right">${g.reason}</div>
+    </div>`).join('');
+
+  document.getElementById('unusual-list').innerHTML = UNUSUAL.map(u=>{
+    const c = u.side==='buy'?'var(--g)':u.side==='sell'?'var(--r)':'var(--b)';
+    const bg = u.side==='buy'?'var(--g2)':u.side==='sell'?'var(--r2)':'var(--b2)';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="font-family:'IBM Plex Mono';font-size:13px;font-weight:600;width:100px">${u.sym}</div>
+      <div style="background:${bg};border:1px solid ${c}30;color:${c};padding:3px 8px;border-radius:5px;font-size:10px;font-weight:600">${u.type}</div>
+      <div style="font-size:11px;color:var(--muted);flex:1">${u.detail}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Switch tabs ──
+function sw(v){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const vs=['recommendations','predictions','movers','advisor'];
+    t.classList.toggle('on',vs[i]===v);
+  });
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  if(v==='advisor'&&!msgs.length) initChat();
+}
+
+// ── Stock detail click ──
+function openStock(sym){
+  const s = STOCKS.find(x=>x.sym===sym);
+  if(!s) return;
+  sw('advisor');
+  setTimeout(()=>{
+    document.getElementById('cinp').value=`Give me a full breakdown and recommendation for ${sym} — should I act now?`;
+  },200);
+}
+
+// ── Quick asks ──
+function qa(el){
+  document.getElementById('cinp').value = el.textContent.trim();
+  document.getElementById('cinp').focus();
+}
+
+// ── AI Chat ──
+let msgs = [], chatHistory = [];
+
+function initChat(){
+  addMsg('a','Good morning. I\'ve run the pre-market analysis across your 8 holdings. Here\'s the executive summary:<br><br>🟢 <strong>BUY</strong>: INFY (84% confidence), HDFC (78%)<br>🔴 <strong>SELL</strong>: TATASTEEL (81% confidence — exit recommended)<br>🟡 <strong>HOLD</strong>: RELIANCE, BAJFINANCE, ITC, ONGC, WIPRO<br><br>Your portfolio probability-weighted upside today is <strong>+1.8%</strong>. Ask me anything about specific positions or signals.');
+  chatHistory.push({role:'assistant',content:'Good morning. Pre-market analysis complete. BUY: INFY, HDFC. SELL: TATASTEEL. Portfolio upside today: +1.8%.'});
+}
+
+function addMsg(role, html){
+  const el = document.createElement('div');
+  el.className = `msg msg-${role}`;
+  el.innerHTML = `<div class="msg-av">${role==='u'?'👤':'◈'}</div><div class="msg-bub">${html}</div>`;
+  document.getElementById('msgs').appendChild(el);
+  document.getElementById('msgs').scrollTop = 99999;
+  msgs.push({role,html});
+}
+
+function addTyping(){
+  const el = document.createElement('div');
+  el.className='msg msg-a';el.id='ty';
+  el.innerHTML=`<div class="msg-av">◈</div><div class="msg-bub"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  document.getElementById('msgs').appendChild(el);
+  document.getElementById('msgs').scrollTop=99999;
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('cinp');
+  const btn=document.getElementById('sbtn');
+  const txt=inp.value.trim();if(!txt)return;
+  addMsg('u',txt);
+  chatHistory.push({role:'user',content:txt});
+  inp.value='';btn.disabled=true;
+  addTyping();
+
+  const sys=`You are StockSense AI — an automated stock advisory system (analytics & insights platform, SEBI-compliant framing) for Indian equity markets (NSE/BSE). 
+
+User portfolio summary: INFY (BUY 84% conf, ₹1612, target ₹1720/₹1840), HDFC Bank (BUY 78% conf, ₹1743, target ₹1820/₹1950), TATASTEEL (SELL 81% conf, ₹112, exit — downside ₹94), RELIANCE (HOLD, ₹2734, range-bound), BAJFINANCE (HOLD, ₹7234, NPA watch), ITC (HOLD, ₹468, stable), ONGC (HOLD, ₹196), WIPRO (HOLD, ₹423, margin pressure).
+
+ML model accuracy: LSTM 73%, NLP Sentiment 68%, Technical 71%, Ensemble 76%. Trading style: Long-term for INFY/HDFC/RELIANCE/ITC, Swing for TATASTEEL/BAJFINANCE, Short-term for ONGC/WIPRO.
+
+Provide direct, actionable, specific answers. Mention probability scores, price targets, stop-losses when relevant. Keep responses concise (4–6 sentences max). Use ₹ for Indian currency. Disclaimer: This is predictive analytics, not SEBI-registered investment advice.`;
+
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:chatHistory})
+    });
+    const d=await r.json();
+    const reply=d.content?.map(c=>c.text||'').join('\n')||'Unable to get response.';
+    document.getElementById('ty')?.remove();
+    addMsg('a',reply.replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>'));
+    chatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    document.getElementById('ty')?.remove();
+    addMsg('a','⚠️ Connection issue. Please retry.');
+  }
+  btn.disabled=false;
+}
+
+document.getElementById('cinp').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey)sendMsg()});
+
+renderRecs();renderPreds();renderMovers();
+</script>
