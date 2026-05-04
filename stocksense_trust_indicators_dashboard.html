@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#1a1612;--ink2:#2c2620;--ink3:#3d342c;--ink4:#524539;
+  --paper:#f5f0e8;--paper2:#ede6d6;--paper3:#e4dac8;--paper4:#d8ccb8;
+  --gold:#c8a45a;--gold2:#e8bf74;--gold3:#f0d090;
+  --green:#2d7a4a;--green2:#3a9960;--greenb:#2d7a4a22;
+  --red:#8b2020;--red2:#b02828;--redb:#8b202022;
+  --amber:#8b6010;--amberb:#8b601022;
+  --blue:#1a4a7a;--blueb:#1a4a7a18;
+  --border:#d8ccb8;--border2:#c8b89a;
+  --text:#1a1612;--muted:#7a6a58;--dim:#a89880;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;color:var(--text);
+}
+
+body{background:var(--paper);min-height:100vh;overflow-x:hidden}
+
+/* Paper texture overlay */
+body::before{content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.6}
+
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:20px 16px}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--ink)}
+.brand{display:flex;flex-direction:column;gap:4px}
+.brand-name{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--ink)}
+.brand-sub{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+.hdr-right{display:flex;align-items:center;gap:20px}
+.hdr-kpi{text-align:right}
+.hdr-kpi-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:600;color:var(--green)}
+.hdr-kpi-lbl{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.live-badge{display:flex;align-items:center;gap:6px;padding:6px 14px;background:var(--ink);color:var(--gold2);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-radius:2px}
+.blink{width:6px;height:6px;border-radius:50%;background:var(--gold2);animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Tabs */
+.tabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid var(--ink)}
+.tab{padding:10px 22px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;font-weight:500}
+.tab.on{color:var(--ink);border-bottom-color:var(--gold);font-weight:600}
+.tab:hover:not(.on){color:var(--ink2)}
+
+/* Section titles */
+.stitle{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border2)}
+
+/* Cards */
+.card{background:var(--paper2);border:1px solid var(--border);border-radius:4px;padding:18px}
+.card-sm{background:var(--paper2);border:1px solid var(--border);border-radius:4px;padding:14px}
+
+/* Grids */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* Signal badge */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;font-size:10px;font-weight:600;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;border:1px solid;border-radius:2px}
+.sbuy{background:var(--greenb);color:var(--green);border-color:#2d7a4a40}
+.ssell{background:var(--redb);color:var(--red);border-color:#8b202040}
+.shold{background:var(--amberb);color:var(--amber);border-color:#8b601040}
+
+/* Accuracy meter */
+.acc-track{height:10px;background:var(--paper3);border-radius:1px;overflow:hidden;margin:6px 0}
+.acc-fill{height:100%;border-radius:1px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+
+/* Indicator pill */
+.ind-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:2px;font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:500;margin:3px}
+.ip-bull{background:var(--greenb);color:var(--green);border:1px solid #2d7a4a30}
+.ip-bear{background:var(--redb);color:var(--red);border:1px solid #8b202030}
+.ip-neut{background:var(--amberb);color:var(--amber);border:1px solid #8b601030}
+.ip-na{background:var(--paper3);color:var(--muted);border:1px solid var(--border)}
+
+/* Gauge (SVG ring) */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center}
+
+/* Performance history row */
+.perf-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.perf-row:last-child{border-bottom:none}
+.perf-sym{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;width:90px}
+.perf-result{width:56px;font-size:11px;font-family:'JetBrains Mono',monospace;text-align:right}
+.perf-bar-t{flex:1;height:5px;background:var(--paper3);border-radius:1px}
+.perf-bar-f{height:100%;border-radius:1px}
+
+/* Insight card */
+.insight{background:var(--ink);color:var(--paper);border-radius:4px;padding:16px;position:relative;overflow:hidden}
+.insight::before{content:'"';position:absolute;top:-8px;right:12px;font-family:'Playfair Display',serif;font-size:80px;color:var(--gold);opacity:.3;line-height:1}
+.insight-tag{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold2);margin-bottom:8px}
+.insight-text{font-family:'DM Sans',sans-serif;font-size:12px;line-height:1.75;color:var(--paper2)}
+.insight-icon{font-size:20px;margin-bottom:8px}
+
+/* Risk appetite toggle */
+.risk-options{display:flex;gap:0;border:1px solid var(--border2);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.risk-opt{flex:1;padding:10px;text-align:center;font-size:11px;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;font-weight:500;border-right:1px solid var(--border2)}
+.risk-opt:last-child{border-right:none}
+.risk-opt.on{background:var(--ink);color:var(--gold2)}
+.risk-opt:not(.on){color:var(--muted)}
+.risk-opt:not(.on):hover{background:var(--paper3)}
+
+/* Social proof bar */
+.sp-bar{height:18px;background:var(--paper3);border-radius:2px;overflow:hidden;display:flex;margin:8px 0}
+.sp-fill-g{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:600;color:#fff;font-family:'JetBrains Mono',monospace;transition:width 1s}
+.sp-fill-r{height:100%;background:linear-gradient(90deg,var(--red2),var(--red));display:flex;align-items:center;padding-left:8px;font-size:10px;color:#fff;font-family:'JetBrains Mono',monospace}
+
+/* Compliance badge */
+.comp-badge{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--paper);border:1px solid var(--border2);border-radius:4px;margin-bottom:8px}
+.comp-icon{width:28px;height:28px;background:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.comp-title{font-size:12px;font-weight:500;color:var(--ink)}
+.comp-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.comp-check{margin-left:auto;color:var(--green);font-size:16px;font-weight:700}
+
+/* Indicator group header */
+.ind-grp{margin-bottom:16px}
+.ind-grp-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.ind-grp-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Confluence meter */
+.confluence-ring{display:flex;justify-content:center;padding:16px 0}
+
+/* Stat boxes */
+.stat-box{background:var(--paper);border:1px solid var(--border);border-radius:4px;padding:14px;text-align:center}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;margin-bottom:4px}
+.stat-lbl{font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted)}
+.stat-sub{font-size:11px;margin-top:4px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* View toggle */
+.view{display:none}.view.on{display:block}
+
+/* Stagger animation */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card,.card-sm,.stat-box,.comp-badge,.insight{animation:fadeUp .4s ease both}
+.card:nth-child(1){animation-delay:.05s}
+.card:nth-child(2){animation-delay:.10s}
+.card:nth-child(3){animation-delay:.15s}
+
+/* Signal reasoning with indicator tags */
+.reasoning-block{background:var(--paper);border-left:3px solid;border-radius:0 4px 4px 0;padding:14px;font-size:12px;line-height:1.8;color:var(--ink);margin-top:12px}
+.rb-buy{border-color:var(--green)}
+.rb-sell{border-color:var(--red)}
+.rb-hold{border-color:var(--amber)}
+
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}.hdr{flex-direction:column;gap:12px;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="brand">
+    <div class="brand-name">StockSense AI — Trust & Intelligence</div>
+    <div class="brand-sub">Transparency · Performance · Confidence · NSE/BSE</div>
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-kpi">
+      <div class="hdr-kpi-val">72%</div>
+      <div class="hdr-kpi-lbl">30d Signal Accuracy</div>
+    </div>
+    <div class="hdr-kpi">
+      <div class="hdr-kpi-val" style="color:var(--blue)">68</div>
+      <div class="hdr-kpi-lbl">Signals This Month</div>
+    </div>
+    <div class="live-badge"><div class="blink"></div>Pre-Market</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab on" onclick="sw('trust')">Trust Dashboard</div>
+  <div class="tab" onclick="sw('indicators')">Indicator Suite</div>
+  <div class="tab" onclick="sw('performance')">Performance History</div>
+  <div class="tab" onclick="sw('education')">Signal Explained</div>
+</div>
+
+<!-- ══════════════ TRUST DASHBOARD ══════════════ -->
+<div id="v-trust" class="view on">
+
+  <!-- Risk appetite -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="stitle">Your Risk Profile</div>
+    <div class="risk-options" id="risk-opts">
+      <div class="risk-opt" onclick="setRisk(this,'conservative')">🛡 Conservative</div>
+      <div class="risk-opt on" onclick="setRisk(this,'moderate')">⚖ Moderate</div>
+      <div class="risk-opt" onclick="setRisk(this,'aggressive')">⚡ Aggressive</div>
+    </div>
+    <div id="risk-desc" style="font-size:12px;color:var(--muted);line-height:1.7;padding:10px;background:var(--paper);border:1px solid var(--border);border-radius:3px">
+      <strong style="color:var(--ink)">Moderate Profile:</strong> Signals require ≥65% confidence. Balanced mix of swing + long-term recommendations. Stop-losses set at 5–7%. Maximum 4 active BUY positions.
+    </div>
+  </div>
+
+  <!-- Accuracy metrics -->
+  <div class="g4" style="margin-bottom:14px" id="acc-metrics"></div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <!-- Signal accuracy by type -->
+    <div class="card">
+      <div class="stitle">Signal Accuracy (30d)</div>
+      <div id="acc-by-type"></div>
+    </div>
+
+    <!-- Social proof -->
+    <div class="card">
+      <div class="stitle">Community Sentiment</div>
+      <div id="social-proof"></div>
+    </div>
+  </div>
+
+  <!-- Compliance & Data Sources -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="stitle">Compliance & Data Sources</div>
+    <div class="g2" id="compliance-list"></div>
+  </div>
+
+  <!-- Expert validation -->
+  <div class="card">
+    <div class="stitle">Expert Validation & Methodology</div>
+    <div class="g2" id="expert-cards"></div>
+  </div>
+</div>
+
+<!-- ══════════════ INDICATOR SUITE ══════════════ -->
+<div id="v-indicators" class="view">
+
+  <!-- Stock selector -->
+  <div style="margin-bottom:14px;display:flex;gap:6px;flex-wrap:wrap" id="ind-stocks"></div>
+
+  <!-- Confluence score -->
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="stitle">Confluence Score</div>
+      <div class="confluence-ring" id="conf-ring"></div>
+      <div id="conf-summary"></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Active Signal Triggers</div>
+      <div id="trigger-list"></div>
+    </div>
+  </div>
+
+  <!-- All indicators -->
+  <div class="card" id="all-indicators"></div>
+</div>
+
+<!-- ══════════════ PERFORMANCE HISTORY ══════════════ -->
+<div id="v-performance" class="view">
+
+  <div class="g3" style="margin-bottom:14px" id="perf-stats"></div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="stitle">Past Signals — BUY</div>
+      <div id="past-buy"></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Past Signals — SELL</div>
+      <div id="past-sell"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="stitle">Monthly Win Rate Trend</div>
+    <div id="win-rate-chart"></div>
+  </div>
+</div>
+
+<!-- ══════════════ SIGNAL EXPLAINED ══════════════ -->
+<div id="v-education" class="view">
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="stitle">Today's Top Signal — INFY BUY</div>
+      <div id="signal-breakdown"></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Indicator Weights Used</div>
+      <div id="weight-breakdown"></div>
+    </div>
+  </div>
+
+  <div class="stitle">Educational Insight Cards</div>
+  <div class="g3" id="insight-cards"></div>
+</div>
+
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────
+
+const RISK_DESC = {
+  conservative: '<strong style="color:var(--ink)">Conservative Profile:</strong> Signals require ≥75% confidence. Long-term holds only. Stop-losses at 3–4%. Max 2 active BUY positions. Avoids high-volatility stocks.',
+  moderate:     '<strong style="color:var(--ink)">Moderate Profile:</strong> Signals require ≥65% confidence. Balanced mix of swing + long-term recommendations. Stop-losses set at 5–7%. Maximum 4 active BUY positions.',
+  aggressive:   '<strong style="color:var(--ink)">Aggressive Profile:</strong> Signals from ≥55% confidence. Short-term + swing emphasis. Stop-losses at 8–10%. Up to 8 active positions. Includes high-momentum opportunities.',
+};
+
+const ACC_METRICS = [
+  {val:'72%',lbl:'Overall Accuracy',sub:'54 signals tracked',color:'var(--green)'},
+  {val:'79%',lbl:'BUY Accuracy',sub:'31 buy signals',color:'var(--green)'},
+  {val:'68%',lbl:'SELL Accuracy',sub:'14 sell signals',color:'var(--amber)'},
+  {val:'61%',lbl:'HOLD Accuracy',sub:'9 hold signals',color:'var(--blue)'},
+];
+
+const COMPLIANCE = [
+  {icon:'🏛',title:'NSE / BSE Live Data Feed',sub:'Direct market data via Zerodha Kite API — SEBI registered broker',check:true},
+  {icon:'📰',title:'SEBI-Compliant News Sources',sub:'ET Markets, Business Standard, NSE Announcements',check:true},
+  {icon:'🔐',title:'AES-256 Encrypted Portfolio Data',sub:'Zero third-party data sharing. SOC2 Type II compliant.',check:true},
+  {icon:'📋',title:'Analytics Tool — Not SEBI IA',sub:'Predictive analytics platform. Not a registered investment advisor.',check:true},
+  {icon:'🔍',title:'Independent Algorithm Audit',sub:'Methodology reviewed by IIM-A Finance Faculty, Q1 2025',check:true},
+  {icon:'📊',title:'Backtest Validated (2yr)',sub:'Signals backtested Jan 2023–Dec 2024. Benchmark: Nifty 50',check:true},
+];
+
+const EXPERTS = [
+  {name:'Dr. Ramesh Krishnan',title:'IIM Ahmedabad — Finance Faculty',quote:'"The multi-factor scoring methodology is statistically robust and addresses common pitfalls of single-indicator systems."',img:'👨‍🏫'},
+  {name:'Priya Sharma, CFA',title:'Ex-ICICI Securities Research Head',quote:'"Transparent reasoning behind each signal is a major differentiator. Most retail tools are black boxes."',img:'👩‍💼'},
+];
+
+const SOCIAL_PROOF = [
+  {sym:'INFY',signal:'BUY',acted:82,total:100,outcome:'profitable'},
+  {sym:'HDFC',signal:'BUY',acted:74,total:100,outcome:'profitable'},
+  {sym:'TATASTEEL',signal:'SELL',acted:68,total:100,outcome:'mixed'},
+  {sym:'RELIANCE',signal:'HOLD',acted:55,total:100,outcome:'watch'},
+];
+
+const STOCKS_IND = ['INFY','HDFC','TATASTEEL','RELIANCE','BAJFINANCE'];
+let currentStock = 'INFY';
+
+const INDICATORS = {
+  INFY: {
+    momentum: [
+      {name:'RSI(14)',val:'52.4',raw:52.4,max:100,signal:'bull',note:'Recovering from oversold'},
+      {name:'MACD',val:'+0.84',raw:70,max:100,signal:'bull',note:'Bullish crossover confirmed'},
+      {name:'Stochastic',val:'%K 44 / %D 38',raw:44,max:100,signal:'neut',note:'Neutral zone'},
+      {name:'ROC(10)',val:'+2.1%',raw:65,max:100,signal:'bull',note:'Positive momentum'},
+      {name:'CCI',val:'+68',raw:68,max:200,signal:'bull',note:'Above zero line'},
+    ],
+    trend: [
+      {name:'SMA(20)',val:'₹1,581',raw:60,max:100,signal:'bull',note:'Price above SMA20'},
+      {name:'SMA(50)',val:'₹1,544',raw:65,max:100,signal:'bull',note:'Price above SMA50'},
+      {name:'EMA(9)',val:'₹1,598',raw:70,max:100,signal:'bull',note:'Short-term uptrend'},
+      {name:'Supertrend',val:'Buy ₹1,562',raw:75,max:100,signal:'bull',note:'Active buy signal'},
+      {name:'Parabolic SAR',val:'₹1,574',raw:62,max:100,signal:'bull',note:'Below price — bullish'},
+      {name:'Ichimoku',val:'Above Cloud',raw:72,max:100,signal:'bull',note:'Bullish confirmation'},
+      {name:'ADX(14)',val:'28.4',raw:57,max:100,signal:'bull',note:'Trending (>25)'},
+    ],
+    volume: [
+      {name:'OBV',val:'↑ Rising',raw:78,max:100,signal:'bull',note:'Accumulation phase'},
+      {name:'VWAP',val:'₹1,594',raw:60,max:100,signal:'bull',note:'Price above VWAP'},
+      {name:'A/D Line',val:'↑ +2.4M',raw:72,max:100,signal:'bull',note:'Distribution flowing in'},
+      {name:'CMF',val:'+0.18',raw:68,max:100,signal:'bull',note:'Positive money flow'},
+      {name:'MFI',val:'58',raw:58,max:100,signal:'bull',note:'Buying pressure dominant'},
+    ],
+    volatility: [
+      {name:'Bollinger Bands',val:'Mid zone',raw:50,max:100,signal:'neut',note:'Price in middle band'},
+      {name:'ATR(14)',val:'28.4',raw:45,max:100,signal:'neut',note:'Moderate volatility'},
+      {name:'Keltner Channel',val:'Within range',raw:55,max:100,signal:'neut',note:'No breakout yet'},
+      {name:'Donchian(20)',val:'Upper half',raw:62,max:100,signal:'bull',note:'Near recent highs'},
+    ],
+    market: [
+      {name:'A/D Ratio',val:'1.8:1',raw:70,max:100,signal:'bull',note:'Breadth positive'},
+      {name:'Put/Call Ratio',val:'0.82',raw:60,max:100,signal:'bull',note:'Bullish sentiment'},
+      {name:'VIX (India)',val:'13.4',raw:65,max:100,signal:'bull',note:'Low fear = risk-on'},
+      {name:'Fear & Greed',val:'62 — Greed',raw:62,max:100,signal:'bull',note:'Market optimism'},
+    ],
+  },
+  TATASTEEL: {
+    momentum: [
+      {name:'RSI(14)',val:'34.2',raw:34,max:100,signal:'bear',note:'Near oversold — downtrend'},
+      {name:'MACD',val:'-1.24',raw:30,max:100,signal:'bear',note:'Bearish crossover'},
+      {name:'Stochastic',val:'%K 22 / %D 28',raw:22,max:100,signal:'bear',note:'Oversold zone'},
+      {name:'ROC(10)',val:'-3.4%',raw:28,max:100,signal:'bear',note:'Negative momentum'},
+      {name:'CCI',val:'-110',raw:20,max:200,signal:'bear',note:'Strong bearish signal'},
+    ],
+    trend: [
+      {name:'SMA(20)',val:'₹121',raw:30,max:100,signal:'bear',note:'Price below SMA20'},
+      {name:'SMA(50)',val:'₹126',raw:28,max:100,signal:'bear',note:'Price below SMA50'},
+      {name:'EMA(9)',val:'₹115',raw:35,max:100,signal:'bear',note:'Short-term downtrend'},
+      {name:'Supertrend',val:'Sell ₹118',raw:25,max:100,signal:'bear',note:'Active sell signal'},
+      {name:'Parabolic SAR',val:'₹118',raw:30,max:100,signal:'bear',note:'Above price — bearish'},
+      {name:'Ichimoku',val:'Below Cloud',raw:22,max:100,signal:'bear',note:'Bearish confirmation'},
+      {name:'ADX(14)',val:'32.1',raw:65,max:100,signal:'bear',note:'Strong downtrend'},
+    ],
+    volume: [
+      {name:'OBV',val:'↓ Falling',raw:28,max:100,signal:'bear',note:'Distribution phase'},
+      {name:'VWAP',val:'₹117',raw:35,max:100,signal:'bear',note:'Price below VWAP'},
+      {name:'A/D Line',val:'↓ -1.8M',raw:30,max:100,signal:'bear',note:'Selling pressure'},
+      {name:'CMF',val:'-0.22',raw:28,max:100,signal:'bear',note:'Negative money flow'},
+      {name:'MFI',val:'34',raw:34,max:100,signal:'bear',note:'Selling dominates'},
+    ],
+    volatility: [
+      {name:'Bollinger Bands',val:'Lower band',raw:25,max:100,signal:'bear',note:'Touching lower band'},
+      {name:'ATR(14)',val:'4.2',raw:68,max:100,signal:'bear',note:'High volatility = risk'},
+      {name:'Keltner Channel',val:'Below lower',raw:22,max:100,signal:'bear',note:'Breakdown signal'},
+      {name:'Donchian(20)',val:'Lower half',raw:28,max:100,signal:'bear',note:'Near recent lows'},
+    ],
+    market: [
+      {name:'A/D Ratio',val:'0.6:1',raw:30,max:100,signal:'bear',note:'Breadth weak'},
+      {name:'Put/Call Ratio',val:'1.4',raw:32,max:100,signal:'bear',note:'Bearish hedging'},
+      {name:'VIX (India)',val:'13.4',raw:65,max:100,signal:'bull',note:'General market OK'},
+      {name:'Fear & Greed',val:'62 — Greed',raw:62,max:100,signal:'bull',note:'Market-wide OK'},
+    ],
+  },
+};
+// Default others to INFY data with slight variation
+['HDFC','RELIANCE','BAJFINANCE'].forEach(s=>{
+  INDICATORS[s] = JSON.parse(JSON.stringify(INDICATORS.INFY));
+  INDICATORS[s].momentum[0].val = s==='HDFC'?'61.2':s==='RELIANCE'?'53.8':'48.4';
+  INDICATORS[s].momentum[0].raw = s==='HDFC'?61:s==='RELIANCE'?54:48;
+});
+
+const PAST_BUY = [
+  {sym:'INFY',date:'Apr 22',signal:'BUY',entry:1541,exit:1612,days:9,result:'+4.6%',ok:true},
+  {sym:'HDFC',date:'Apr 15',signal:'BUY',entry:1680,exit:1743,days:14,result:'+3.7%',ok:true},
+  {sym:'SUNPHARMA',date:'Apr 8',signal:'BUY',entry:1198,exit:1284,days:18,result:'+7.2%',ok:true},
+  {sym:'WIPRO',date:'Mar 28',signal:'BUY',entry:448,exit:423,days:12,result:'-5.6%',ok:false},
+  {sym:'ITC',date:'Mar 20',signal:'BUY',entry:412,exit:468,days:30,result:'+13.6%',ok:true},
+  {sym:'BAJFINANCE',date:'Mar 10',signal:'BUY',entry:7100,exit:7234,days:22,result:'+1.9%',ok:true},
+];
+const PAST_SELL = [
+  {sym:'TATASTEEL',date:'Apr 24',signal:'SELL',entry:121,exit:112,days:7,result:'+7.4%',ok:true},
+  {sym:'ONGC',date:'Apr 12',signal:'SELL',entry:204,exit:196,days:11,result:'+3.9%',ok:true},
+  {sym:'WIPRO',date:'Mar 31',signal:'SELL',entry:461,exit:423,days:14,result:'+8.2%',ok:true},
+  {sym:'LT',date:'Mar 18',signal:'SELL',entry:3610,exit:3742,days:8,result:'-3.7%',ok:false},
+];
+
+const MONTHLY = [
+  {month:'Nov',rate:64},{month:'Dec',rate:69},{month:'Jan',rate:71},
+  {month:'Feb',rate:66},{month:'Mar',rate:74},{month:'Apr',rate:72},
+];
+
+const INSIGHTS = [
+  {icon:'📦',tag:'Volume Analysis',text:'Bulk deals above ₹100Cr by institutional investors often signal conviction. When FIIs buy in bulk, it typically precedes a 5–15 day upward move.'},
+  {icon:'📈',tag:'MACD Signal',text:'A MACD bullish crossover (fast line crossing above slow) historically preceded positive 10-day returns 71% of the time on NSE large-caps.'},
+  {icon:'🔄',tag:'RSI Divergence',text:'When RSI rises while price falls (positive divergence), it often signals exhaustion of the downtrend. This is one of the most reliable reversal indicators.'},
+  {icon:'☁️',tag:'Ichimoku Cloud',text:'Price trading above the Kumo (cloud) is a strong trend confirmation. The cloud thickness indicates the strength of the support/resistance zone.'},
+  {icon:'💧',tag:'Money Flow Index',text:'MFI combines price and volume. Values below 20 are oversold (buy opportunity); above 80 are overbought (exit signal). More reliable than RSI alone.'},
+  {icon:'🏔',tag:'Support & Resistance',text:'Key price levels where stock historically reversed. Buying near strong support with tight stop-loss is a high-probability trade setup used by institutions.'},
+];
+
+// ── RENDERS ──────────────────────────────────────────────────
+
+function renderTrust(){
+  // Accuracy metrics
+  document.getElementById('acc-metrics').innerHTML = ACC_METRICS.map(m=>`
+    <div class="stat-box">
+      <div class="stat-val" style="color:${m.color}">${m.val}</div>
+      <div class="stat-lbl">${m.lbl}</div>
+      <div class="stat-sub" style="color:var(--muted)">${m.sub}</div>
+    </div>`).join('');
+
+  // Accuracy by type
+  const types = [{lbl:'BUY signals',pct:79,c:'var(--green)'},{lbl:'SELL signals',pct:68,c:'var(--red)'},{lbl:'HOLD signals',pct:61,c:'var(--amber)'},{lbl:'Combined',pct:72,c:'var(--blue)'}];
+  document.getElementById('acc-by-type').innerHTML = types.map(t=>`
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px">
+        <span style="color:var(--muted)">${t.lbl}</span>
+        <span style="font-family:'JetBrains Mono';color:${t.c};font-weight:600">${t.pct}%</span>
+      </div>
+      <div class="acc-track"><div class="acc-fill" style="width:${t.pct}%;background:${t.c}"></div></div>
+    </div>`).join('');
+
+  // Social proof
+  document.getElementById('social-proof').innerHTML = SOCIAL_PROOF.map(s=>`
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-family:'JetBrains Mono';font-size:12px;font-weight:600">${s.sym}</span>
+        <span class="sbadge ${s.signal==='BUY'?'sbuy':s.signal==='SELL'?'ssell':'shold'}">${s.signal}</span>
+      </div>
+      <div class="sp-bar">
+        <div class="sp-fill-g" style="width:${s.acted}%">${s.acted}% acted</div>
+        <div class="sp-fill-r" style="flex:1">${100-s.acted}%</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">Anonymised · ${s.acted} of 100 sampled users acted on this signal</div>
+    </div>`).join('');
+
+  // Compliance
+  document.getElementById('compliance-list').innerHTML = COMPLIANCE.map(c=>`
+    <div class="comp-badge">
+      <div class="comp-icon">${c.icon}</div>
+      <div>
+        <div class="comp-title">${c.title}</div>
+        <div class="comp-sub">${c.sub}</div>
+      </div>
+      ${c.check?'<div class="comp-check">✓</div>':''}
+    </div>`).join('');
+
+  // Expert
+  document.getElementById('expert-cards').innerHTML = EXPERTS.map(e=>`
+    <div class="card" style="background:var(--ink);color:var(--paper);position:relative;overflow:hidden">
+      <div style="position:absolute;top:-10px;right:12px;font-family:'Playfair Display',serif;font-size:70px;color:var(--gold);opacity:.2;line-height:1">"</div>
+      <div style="font-size:28px;margin-bottom:8px">${e.img}</div>
+      <div style="font-size:11px;font-style:italic;line-height:1.7;color:var(--paper2);margin-bottom:12px">${e.quote}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--gold2)">${e.name}</div>
+      <div style="font-size:10px;color:var(--dim);letter-spacing:.3px">${e.title}</div>
+    </div>`).join('');
+}
+
+function renderIndicators(sym){
+  currentStock = sym;
+  document.querySelectorAll('#ind-stocks button').forEach(b=>{
+    const on = b.dataset.sym === sym;
+    b.style.background = on?'var(--ink)':'var(--paper2)';
+    b.style.color = on?'var(--gold2)':'var(--muted)';
+    b.style.borderColor = on?'var(--ink)':'var(--border)';
+  });
+
+  const ind = INDICATORS[sym] || INDICATORS.INFY;
+  const allInds = [...ind.momentum,...ind.trend,...ind.volume,...ind.volatility,...ind.market];
+  const bulls = allInds.filter(i=>i.signal==='bull').length;
+  const bears = allInds.filter(i=>i.signal==='bear').length;
+  const neuts = allInds.filter(i=>i.signal==='neut').length;
+  const total = allInds.length;
+  const score = Math.round((bulls / total) * 100);
+  const signalDecision = score>=60?'BUY':score<=40?'SELL':'HOLD';
+  const signalColor = score>=60?'var(--green)':score<=40?'var(--red)':'var(--amber)';
+
+  // Confluence ring
+  const r=38, circ=2*Math.PI*r, dash=(score/100)*circ;
+  document.getElementById('conf-ring').innerHTML = `
+    <div style="text-align:center">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--paper3)" stroke-width="7"/>
+        <circle cx="50" cy="50" r="${r}" fill="none" stroke="${signalColor}" stroke-width="7"
+          stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}"
+          stroke-dashoffset="${circ/4}" stroke-linecap="round"/>
+        <text x="50" y="45" text-anchor="middle" fill="${signalColor}" font-size="18" font-family="JetBrains Mono" font-weight="700">${score}</text>
+        <text x="50" y="60" text-anchor="middle" fill="var(--muted)" font-size="10" font-family="DM Sans">/100</text>
+      </svg>
+      <div style="font-size:11px;font-weight:600;color:${signalColor}">${signalDecision} — Confluence Score</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">${bulls} Bull · ${bears} Bear · ${neuts} Neutral of ${total} indicators</div>
+    </div>`;
+
+  // Active triggers (bullish signals)
+  const triggers = allInds.filter(i=>i.signal==='bull'||i.signal==='bear').slice(0,8);
+  document.getElementById('trigger-list').innerHTML = triggers.map(t=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:11px;font-weight:500;font-family:'JetBrains Mono'">${t.name}</div>
+        <div style="font-size:10px;color:var(--muted)">${t.note}</div>
+      </div>
+      <span class="ind-pill ${t.signal==='bull'?'ip-bull':t.signal==='bear'?'ip-bear':'ip-neut'}">${t.val}</span>
+    </div>`).join('')+'<div style="padding-top:8px;font-size:10px;color:var(--muted);text-align:center">Showing top triggered signals</div>';
+
+  // All indicators grouped
+  const groups = [
+    {title:'Momentum Indicators',key:'momentum',items:ind.momentum},
+    {title:'Trend Indicators',key:'trend',items:ind.trend},
+    {title:'Volume Indicators',key:'volume',items:ind.volume},
+    {title:'Volatility Indicators',key:'volatility',items:ind.volatility},
+    {title:'Market Breadth & Sentiment',key:'market',items:ind.market},
+  ];
+
+  document.getElementById('all-indicators').innerHTML = `
+    <div class="stitle">All Indicators — ${sym}</div>
+    ${groups.map(g=>`
+      <div class="ind-grp">
+        <div class="ind-grp-title">${g.title}</div>
+        <div>${g.items.map(i=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="width:120px;font-size:11px;font-family:'JetBrains Mono';font-weight:500">${i.name}</div>
+            <div style="flex:1;height:5px;background:var(--paper3);border-radius:1px">
+              <div style="height:100%;width:${Math.min(100,(i.raw/i.max)*100)}%;background:${i.signal==='bull'?'var(--green)':i.signal==='bear'?'var(--red)':'var(--amber)'};border-radius:1px;transition:width 1s"></div>
+            </div>
+            <span class="ind-pill ${i.signal==='bull'?'ip-bull':i.signal==='bear'?'ip-bear':i.signal==='neut'?'ip-neut':'ip-na'}" style="width:110px;text-align:center">${i.val}</span>
+            <div style="font-size:10px;color:var(--muted);width:160px">${i.note}</div>
+          </div>`).join('')}
+        </div>
+      </div>`).join('')}`;
+}
+
+function renderPerformance(){
+  // Stats
+  document.getElementById('perf-stats').innerHTML = [
+    {val:'54',lbl:'Total Signals (30d)',sub:'31 Buy · 14 Sell · 9 Hold',c:'var(--ink)'},
+    {val:'72%',lbl:'Win Rate',sub:'+4.2% vs prior month',c:'var(--green)'},
+    {val:'+18.4%',lbl:'Portfolio Alpha',sub:'vs Nifty 50 benchmark',c:'var(--green)'},
+  ].map(s=>`<div class="stat-box"><div class="stat-val" style="color:${s.c}">${s.val}</div><div class="stat-lbl">${s.lbl}</div><div class="stat-sub" style="color:var(--muted)">${s.sub}</div></div>`).join('');
+
+  const row = (r,isSell)=>`
+    <div class="perf-row">
+      <div class="perf-sym">${r.sym}</div>
+      <div style="font-size:10px;color:var(--muted);width:50px">${r.date}</div>
+      <div style="font-size:10px;color:var(--muted);width:50px">${r.days}d</div>
+      <div class="perf-bar-t"><div class="perf-bar-f" style="width:${Math.abs(parseFloat(r.result))*8}%;background:${r.ok?'var(--green)':'var(--red)'}"></div></div>
+      <div class="perf-result" style="color:${r.ok?'var(--green)':'var(--red)'}">${r.result}</div>
+      <div style="margin-left:4px;font-size:14px">${r.ok?'✓':'✗'}</div>
+    </div>`;
+  document.getElementById('past-buy').innerHTML  = PAST_BUY.map(r=>row(r,false)).join('');
+  document.getElementById('past-sell').innerHTML = PAST_SELL.map(r=>row(r,true)).join('');
+
+  // Win rate chart
+  const maxH = 70;
+  document.getElementById('win-rate-chart').innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:12px;height:${maxH+30}px;padding-top:10px">
+      ${MONTHLY.map(m=>{
+        const h = (m.rate/100)*maxH;
+        const c = m.rate>=70?'var(--green)':m.rate>=60?'var(--amber)':'var(--red)';
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:10px;font-family:'JetBrains Mono';color:${c};font-weight:600">${m.rate}%</div>
+          <div style="width:100%;height:${h}px;background:${c};border-radius:2px 2px 0 0;opacity:.85;transition:height 1s"></div>
+          <div style="font-size:10px;color:var(--muted)">${m.month}</div>
+        </div>`;}).join('')}
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:8px">Monthly signal win rate — last 6 months</div>`;
+}
+
+function renderEducation(){
+  // Signal breakdown for INFY
+  const factors = [
+    {ind:'RSI(14)',val:'52.4',signal:'Recovering — Bullish',weight:15,c:'var(--green)'},
+    {ind:'MACD',val:'+0.84',signal:'Bullish crossover',weight:20,c:'var(--green)'},
+    {ind:'OBV',val:'Rising',signal:'Accumulation',weight:18,c:'var(--green)'},
+    {ind:'Supertrend',val:'Buy',signal:'Confirmed Buy',weight:20,c:'var(--green)'},
+    {ind:'Ichimoku',val:'Above Cloud',signal:'Bullish zone',weight:12,c:'var(--green)'},
+    {ind:'Sentiment',val:'+0.74',signal:'Positive news flow',weight:15,c:'var(--green)'},
+  ];
+
+  document.getElementById('signal-breakdown').innerHTML = `
+    <div class="sbadge sbuy" style="margin-bottom:12px;font-size:12px;padding:5px 14px">BUY — 84% Confidence</div>
+    <div class="reasoning-block rb-buy">
+      RSI at 52.4 recovering from oversold. MACD bullish crossover confirmed. OBV rising (institutional accumulation). Supertrend active buy at ₹1,562. Ichimoku above cloud. Earnings beat +6.2%.
+    </div>
+    <div style="margin-top:14px">
+      ${factors.map(f=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="font-family:'JetBrains Mono';font-size:11px;font-weight:600;width:100px">${f.ind}</div>
+        <div style="flex:1;height:5px;background:var(--paper3);border-radius:1px">
+          <div style="height:100%;width:${f.weight*4}%;background:${f.c};border-radius:1px"></div>
+        </div>
+        <div style="font-size:11px;color:var(--green);width:130px">${f.signal}</div>
+        <div style="font-family:'JetBrains Mono';font-size:10px;color:var(--muted);width:28px">${f.weight}%</div>
+      </div>`).join('')}
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">Weight % = contribution to composite score</div>
+    </div>`;
+
+  // Weight breakdown donut
+  const weights = [{l:'Technical TA',w:30,c:'var(--blue)'},{l:'Fundamental',w:30,c:'var(--green)'},{l:'Sentiment NLP',w:25,c:'var(--amber)'},{l:'Volume/Deals',w:15,c:'var(--red)'}];
+  document.getElementById('weight-breakdown').innerHTML = `
+    <div style="display:flex;justify-content:center;margin-bottom:14px">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        ${(()=>{
+          let angle = -Math.PI/2, r=50, cx=70, cy=70;
+          return weights.map(w=>{
+            const sweep = (w.w/100)*2*Math.PI;
+            const x1=cx+r*Math.cos(angle), y1=cy+r*Math.sin(angle);
+            const x2=cx+r*Math.cos(angle+sweep), y2=cy+r*Math.sin(angle+sweep);
+            const large=sweep>Math.PI?1:0;
+            const path=`M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} Z`;
+            angle+=sweep;
+            return `<path d="${path}" fill="${w.c}" opacity=".85" stroke="var(--paper2)" stroke-width="2"/>`;
+          }).join('');
+        })()}
+        <circle cx="70" cy="70" r="28" fill="var(--paper2)"/>
+        <text x="70" y="67" text-anchor="middle" fill="var(--ink)" font-size="13" font-family="JetBrains Mono" font-weight="700">Multi</text>
+        <text x="70" y="80" text-anchor="middle" fill="var(--muted)" font-size="9" font-family="DM Sans">Factor</text>
+      </svg>
+    </div>
+    ${weights.map(w=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <div style="width:10px;height:10px;border-radius:2px;background:${w.c};flex-shrink:0"></div>
+      <div style="flex:1;font-size:12px">${w.l}</div>
+      <div style="font-family:'JetBrains Mono';font-size:12px;font-weight:600">${w.w}%</div>
+    </div>`).join('')}`;
+
+  // Insight cards
+  document.getElementById('insight-cards').innerHTML = INSIGHTS.map((ins,i)=>`
+    <div class="insight" style="animation-delay:${i*.08}s">
+      <div class="insight-icon">${ins.icon}</div>
+      <div class="insight-tag">${ins.tag}</div>
+      <div class="insight-text">${ins.text}</div>
+    </div>`).join('');
+}
+
+// ── Tab switcher ──────────────────────────────────────────────
+function sw(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ts=['trust','indicators','performance','education'];
+    t.classList.toggle('on',ts[i]===tab);
+  });
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('v-'+tab).classList.add('on');
+
+  if(tab==='indicators' && !document.getElementById('ind-stocks').innerHTML){
+    document.getElementById('ind-stocks').innerHTML = STOCKS_IND.map(s=>`
+      <button data-sym="${s}" onclick="renderIndicators('${s}')"
+        style="padding:6px 16px;background:var(--paper2);border:1px solid var(--border);color:var(--muted);border-radius:2px;font-size:11px;font-family:'JetBrains Mono',monospace;letter-spacing:.4px;cursor:pointer;font-weight:500;transition:all .15s">
+        ${s}
+      </button>`).join('');
+    renderIndicators('INFY');
+  }
+}
+
+function setRisk(el, type){
+  document.querySelectorAll('.risk-opt').forEach(o=>o.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById('risk-desc').innerHTML = RISK_DESC[type];
+}
+
+// Init
+renderTrust();
+renderPerformance();
+renderEducation();
+</script>
+</body>
+</html>
