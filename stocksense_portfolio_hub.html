@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Barlow:wght@300;400;500;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+:root{
+  --bg:#080c12;--bg2:#0d1320;--bg3:#111928;--bg4:#17213a;--bg5:#1e2d4a;
+  --border:#ffffff08;--b2:#ffffff12;--b3:#ffffff1e;--b4:#ffffff2a;
+  --txt:#c8d4e8;--muted:#5a7090;--dim:#2a3a54;--faint:#141e30;
+  --amber:#e8a020;--amber2:#f0c060;--amber3:#f8e090;
+  --green:#18c87a;--green2:#22e890;--greenb:#18c87a14;
+  --red:#e83048;--red2:#ff5060;--redb:#e8304814;
+  --yellow:#f0c020;--yellowb:#f0c02014;
+  --blue:#3090f8;--blueb:#3090f814;
+  --purple:#9060e8;
+  font-family:'Barlow',sans-serif;font-size:13px;color:var(--txt);
+}
+
+body{background:var(--bg);min-height:100vh;overflow-x:hidden}
+
+/* Scanline overlay */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05) 2px,rgba(0,0,0,.05) 4px);pointer-events:none;z-index:9999}
+
+.wrap{max-width:1140px;margin:0 auto;padding:16px}
+
+/* ── TOP BAR ─────────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding:12px 18px;background:var(--bg2);border:1px solid var(--b2);border-top:2px solid var(--amber)}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--amber);flex-shrink:0}
+.brand span{color:var(--txt);opacity:.4}
+
+/* Search */
+.search-wrap{flex:1;position:relative;max-width:440px}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--b3);color:var(--txt);font-family:'Space Mono',monospace;font-size:12px;padding:9px 38px 9px 14px;outline:none;transition:border .2s}
+.search-input:focus{border-color:var(--amber)}
+.search-input::placeholder{color:var(--muted)}
+.search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.suggestions{position:absolute;top:100%;left:0;right:0;background:var(--bg3);border:1px solid var(--b3);border-top:none;z-index:100;display:none}
+.suggestions.open{display:block}
+.sugg-item{padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .1s}
+.sugg-item:hover{background:var(--bg4)}
+.sugg-sym{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;color:var(--amber);width:80px}
+.sugg-name{font-size:11px;color:var(--muted)}
+
+/* Kpi strip */
+.kpis{display:flex;gap:0;margin-bottom:14px;border:1px solid var(--b2)}
+.kpi{flex:1;padding:12px 16px;border-right:1px solid var(--b2);position:relative;overflow:hidden}
+.kpi:last-child{border-right:none}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.green::before{background:var(--green)}
+.kpi.red::before{background:var(--red)}
+.kpi.amber::before{background:var(--amber)}
+.kpi.blue::before{background:var(--blue)}
+.kpi-val{font-family:'Space Mono',monospace;font-size:18px;font-weight:700;letter-spacing:-.5px}
+.kpi-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:3px}
+.kpi-sub{font-size:10px;margin-top:2px;font-family:'Space Mono',monospace}
+
+/* Controls bar */
+.controls{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.ctrl-group{display:flex;gap:0;border:1px solid var(--b3)}
+.ctrl-btn{padding:6px 14px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);cursor:pointer;border-right:1px solid var(--b3);transition:all .15s;font-family:'Barlow',sans-serif;background:none;font-weight:500}
+.ctrl-btn:last-child{border-right:none}
+.ctrl-btn.on{background:var(--amber);color:var(--bg);font-weight:600}
+.ctrl-btn:not(.on):hover{color:var(--txt);background:var(--bg3)}
+.spacer{flex:1}
+.view-btn{padding:6px 12px;font-size:11px;color:var(--muted);cursor:pointer;border:1px solid var(--b2);background:none;transition:all .15s}
+.view-btn.on{color:var(--amber);border-color:var(--amber)}
+
+/* Sort headers */
+.sort-hdr{display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;white-space:nowrap}
+.sort-hdr:hover{color:var(--amber2)}
+.sort-arr{font-size:8px;opacity:.5}
+.sort-arr.on{opacity:1;color:var(--amber)}
+
+/* ── SECTOR GROUPS ──────────────────────────── */
+.sector-group{margin-bottom:10px;border:1px solid var(--b2)}
+.sector-hdr{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg2);cursor:pointer;border-bottom:1px solid var(--b2);transition:background .15s;user-select:none}
+.sector-hdr:hover{background:var(--bg3)}
+.sector-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sector-name{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1px;color:var(--txt)}
+.sector-meta{font-size:10px;color:var(--muted);margin-left:auto;font-family:'Space Mono',monospace}
+.sector-pill{padding:2px 8px;font-size:9px;letter-spacing:.5px;text-transform:uppercase;font-weight:600;border:1px solid}
+.sp-bull{color:var(--green);border-color:var(--green);background:var(--greenb)}
+.sp-bear{color:var(--red);border-color:var(--red);background:var(--redb)}
+.sp-neut{color:var(--yellow);border-color:var(--yellow);background:var(--yellowb)}
+.chevron{font-size:10px;color:var(--muted);transition:transform .25s;flex-shrink:0}
+.chevron.open{transform:rotate(180deg)}
+.sector-body{overflow:hidden;transition:max-height .3s ease}
+
+/* Stock table */
+.stk-table{width:100%;border-collapse:collapse}
+.stk-thead th{padding:7px 14px;font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:left;border-bottom:1px solid var(--b2);background:var(--faint);white-space:nowrap}
+.stk-row{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+.stk-row:hover{background:var(--bg4)}
+.stk-row:last-child{border-bottom:none}
+td{padding:9px 14px;vertical-align:middle}
+
+/* Pin */
+.pin-btn{background:none;border:none;cursor:pointer;font-size:12px;color:var(--dim);transition:color .15s;padding:0 4px}
+.pin-btn.pinned{color:var(--amber)}
+.pin-btn:hover{color:var(--amber2)}
+
+.sym-cell{display:flex;align-items:center;gap:8px}
+.sym-txt{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:.3px}
+.sym-name{font-size:10px;color:var(--muted);margin-top:1px}
+.style-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+.mono{font-family:'Space Mono',monospace;font-size:12px}
+.up{color:var(--green)}.dn{color:var(--red)}.nt{color:var(--yellow)}
+
+.sig-badge{display:inline-flex;padding:2px 8px;font-size:9px;font-weight:700;letter-spacing:.5px;font-family:'Space Mono',monospace;border:1px solid}
+.sb-buy{color:var(--green);border-color:var(--green);background:var(--greenb)}
+.sb-sell{color:var(--red);border-color:var(--red);background:var(--redb)}
+.sb-hold{color:var(--yellow);border-color:var(--yellow);background:var(--yellowb)}
+
+/* Mini sparkline */
+.spark{display:flex;align-items:flex-end;gap:1px;height:22px;width:60px}
+.spk{flex:1;border-radius:1px 1px 0 0}
+
+/* Conf bar */
+.conf-bar{height:3px;background:var(--dim);width:60px;border-radius:1px}
+.conf-fill{height:100%;border-radius:1px}
+
+/* ── TOP / WORST PERFORMERS ─────────────────── */
+.perf-strip{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.perf-card{background:var(--bg2);border:1px solid var(--b2);padding:14px}
+.perf-title{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.perf-title::after{content:'';flex:1;height:1px;background:var(--b2)}
+.perf-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.perf-row:last-child{border-bottom:none}
+.perf-sym{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;width:88px}
+.perf-bar-t{flex:1;height:4px;background:var(--dim);border-radius:1px}
+.perf-bar-f{height:100%;border-radius:1px;transition:width .8s ease}
+.perf-pct{font-family:'Space Mono',monospace;font-size:11px;width:52px;text-align:right}
+
+/* ── CHARTS ─────────────────────────────────── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.chart-card{background:var(--bg2);border:1px solid var(--b2);padding:14px}
+.chart-title{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+
+/* ── PINNED TOP ─────────────────────────────── */
+.pinned-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;min-height:0}
+.pin-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--bg2);border:1px solid var(--amber);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;transition:background .15s}
+.pin-chip:hover{background:var(--bg4)}
+.pin-chip-sym{color:var(--amber);font-weight:700}
+.pin-chip-val{color:var(--muted)}
+
+/* ── EXPORT BTN ─────────────────────────────── */
+.export-btn{padding:7px 16px;background:none;border:1px solid var(--b3);color:var(--muted);font-size:10px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s}
+.export-btn:hover{border-color:var(--amber);color:var(--amber)}
+
+/* ── SAVED VIEWS ────────────────────────────── */
+.saved-views{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.sv-chip{padding:5px 12px;background:var(--bg2);border:1px solid var(--b2);font-size:10px;color:var(--muted);cursor:pointer;letter-spacing:.4px;transition:all .15s}
+.sv-chip.on{border-color:var(--amber);color:var(--amber)}
+.sv-chip:hover:not(.on){color:var(--txt)}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:center;gap:4px;padding:14px}
+.pg-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:var(--bg2);border:1px solid var(--b2);font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);cursor:pointer;transition:all .15s}
+.pg-btn.on{background:var(--amber);color:var(--bg);border-color:var(--amber);font-weight:700}
+.pg-btn:hover:not(.on){border-color:var(--b3);color:var(--txt)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;background:var(--bg2);border:1px solid var(--amber);color:var(--amber);font-size:11px;letter-spacing:.5px;font-family:'Space Mono',monospace;animation:toastIn .3s ease;z-index:1000}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* No-results */
+.no-results{text-align:center;padding:40px;color:var(--muted);font-family:'Space Mono',monospace;font-size:12px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--b3)}
+
+@media(max-width:680px){
+  .perf-strip,.charts-row{grid-template-columns:1fr}
+  .kpis{flex-wrap:wrap}
+  .kpi{min-width:50%}
+  .controls{gap:4px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">Stock<span>SENSE</span> AI</div>
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" placeholder="⌕  Search stocks, sectors, companies…" autocomplete="off"/>
+    <div class="suggestions" id="suggestions"></div>
+  </div>
+  <button class="export-btn" onclick="exportCSV()">↓ Export CSV</button>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpis">
+  <div class="kpi green">
+    <div class="kpi-val" style="color:var(--green)">₹24.7L</div>
+    <div class="kpi-lbl">Portfolio Value</div>
+    <div class="kpi-sub" style="color:var(--green)">↑ +₹38,240 today</div>
+  </div>
+  <div class="kpi red">
+    <div class="kpi-val" style="color:var(--green)">+₹3.41L</div>
+    <div class="kpi-lbl">Total P&L</div>
+    <div class="kpi-sub" style="color:var(--green)">+16.0% overall</div>
+  </div>
+  <div class="kpi amber">
+    <div class="kpi-val" style="color:var(--amber)">8 <span style="font-size:12px;opacity:.5">signals</span></div>
+    <div class="kpi-lbl">Active Today</div>
+    <div class="kpi-sub">2 Buy · 1 Sell · 5 Hold</div>
+  </div>
+  <div class="kpi blue">
+    <div class="kpi-val" style="color:var(--amber2)">72%</div>
+    <div class="kpi-lbl">30d Accuracy</div>
+    <div class="kpi-sub" style="color:var(--green)">↑ +4% vs last month</div>
+  </div>
+</div>
+
+<!-- SAVED VIEWS -->
+<div class="saved-views" id="savedViews"></div>
+
+<!-- PINNED -->
+<div class="pinned-bar" id="pinnedBar"></div>
+
+<!-- CHARTS -->
+<div class="charts-row">
+  <div class="chart-card">
+    <div class="chart-title">Sector Allocation</div>
+    <canvas id="sectorChart" width="100%" height="130"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Signal Distribution</div>
+    <canvas id="signalChart" width="100%" height="130"></canvas>
+  </div>
+</div>
+
+<!-- TOP / WORST PERFORMERS -->
+<div class="perf-strip">
+  <div class="perf-card">
+    <div class="perf-title">🏆 Top 3 Today</div>
+    <div id="topPerformers"></div>
+  </div>
+  <div class="perf-card">
+    <div class="perf-title">⚠ Worst 3 Today</div>
+    <div id="worstPerformers"></div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <!-- Style filter -->
+  <div class="ctrl-group" id="styleFilter">
+    <button class="ctrl-btn on" data-style="all">All</button>
+    <button class="ctrl-btn" data-style="long-term">Long-Term</button>
+    <button class="ctrl-btn" data-style="swing">Swing</button>
+    <button class="ctrl-btn" data-style="short-term">Short-Term</button>
+  </div>
+  <!-- Signal filter -->
+  <div class="ctrl-group" id="signalFilter">
+    <button class="ctrl-btn on" data-sig="all">All Signals</button>
+    <button class="ctrl-btn" data-sig="BUY">Buy</button>
+    <button class="ctrl-btn" data-sig="SELL">Sell</button>
+    <button class="ctrl-btn" data-sig="HOLD">Hold</button>
+  </div>
+  <!-- Perf filter -->
+  <div class="ctrl-group" id="perfFilter">
+    <button class="ctrl-btn on" data-perf="all">All</button>
+    <button class="ctrl-btn" data-perf="gainers">Gainers</button>
+    <button class="ctrl-btn" data-perf="losers">Losers</button>
+  </div>
+  <div class="spacer"></div>
+  <button class="view-btn on" id="groupBtn" onclick="setView('group')">⊞ Grouped</button>
+  <button class="view-btn" id="flatBtn" onclick="setView('flat')">≡ Flat</button>
+</div>
+
+<!-- PORTFOLIO TABLE AREA -->
+<div id="portfolioArea"></div>
+<div id="pagination" class="pagination"></div>
+
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const ALL_STOCKS = [
+  {sym:'INFY',   name:'Infosys Ltd',          sector:'IT',       style:'long-term', ltp:1612, avg:1420, qty:80,  chg:2.1,  vol:4200000, signal:'BUY',  conf:84, pinned:true,  color:'#3090f8'},
+  {sym:'WIPRO',  name:'Wipro Ltd',             sector:'IT',       style:'short-term',ltp:423,  avg:448,  qty:150, chg:-0.9, vol:1800000, signal:'HOLD', conf:48, pinned:false, color:'#3090f8'},
+  {sym:'TCS',    name:'Tata Consultancy',      sector:'IT',       style:'long-term', ltp:3812, avg:3500, qty:20,  chg:1.2,  vol:900000,  signal:'HOLD', conf:61, pinned:false, color:'#3090f8'},
+  {sym:'HDFCBANK',name:'HDFC Bank',            sector:'Banking',  style:'long-term', ltp:1743, avg:1580, qty:60,  chg:1.4,  vol:5100000, signal:'BUY',  conf:78, pinned:true,  color:'#18c87a'},
+  {sym:'KOTAKBANK',name:'Kotak Mahindra Bank', sector:'Banking',  style:'swing',     ltp:1824, avg:1790, qty:40,  chg:0.6,  vol:1200000, signal:'HOLD', conf:55, pinned:false, color:'#18c87a'},
+  {sym:'SBIN',   name:'State Bank of India',   sector:'Banking',  style:'swing',     ltp:812,  avg:760,  qty:100, chg:1.8,  vol:8900000, signal:'HOLD', conf:62, pinned:false, color:'#18c87a'},
+  {sym:'RELIANCE',name:'Reliance Industries',  sector:'Energy',   style:'long-term', ltp:2734, avg:2450, qty:50,  chg:0.4,  vol:3800000, signal:'HOLD', conf:62, pinned:false, color:'#e8a020'},
+  {sym:'ONGC',   name:'ONGC',                  sector:'Energy',   style:'short-term',ltp:196,  avg:178,  qty:300, chg:-0.5, vol:6200000, signal:'HOLD', conf:51, pinned:false, color:'#e8a020'},
+  {sym:'TATASTEEL',name:'Tata Steel',          sector:'Metals',   style:'swing',     ltp:112,  avg:128,  qty:200, chg:-1.8, vol:9400000, signal:'SELL', conf:81, pinned:false, color:'#e83048'},
+  {sym:'JSWSTEEL',name:'JSW Steel',            sector:'Metals',   style:'swing',     ltp:924,  avg:880,  qty:50,  chg:-0.7, vol:1700000, signal:'HOLD', conf:53, pinned:false, color:'#e83048'},
+  {sym:'ITC',    name:'ITC Ltd',               sector:'FMCG',     style:'long-term', ltp:468,  avg:312,  qty:500, chg:0.8,  vol:7200000, signal:'HOLD', conf:63, pinned:false, color:'#9060e8'},
+  {sym:'BAJFINANCE',name:'Bajaj Finance',      sector:'NBFC',     style:'swing',     ltp:7234, avg:6800, qty:25,  chg:0.9,  vol:820000,  signal:'HOLD', conf:59, pinned:false, color:'#f0c020'},
+  {sym:'SUNPHARMA',name:'Sun Pharmaceutical',  sector:'Pharma',   style:'long-term', ltp:1284, avg:1100, qty:45,  chg:2.1,  vol:1900000, signal:'BUY',  conf:72, pinned:false, color:'#30d0c8'},
+  {sym:'LT',     name:'Larsen & Toubro',       sector:'Infra',    style:'long-term', ltp:3742, avg:3400, qty:18,  chg:0.6,  vol:1100000, signal:'HOLD', conf:60, pinned:false, color:'#c86030'},
+];
+
+const SECTORS = ['IT','Banking','Energy','Metals','FMCG','NBFC','Pharma','Infra'];
+const SECTOR_COLORS = {IT:'#3090f8',Banking:'#18c87a',Energy:'#e8a020',Metals:'#e83048',FMCG:'#9060e8',NBFC:'#f0c020',Pharma:'#30d0c8',Infra:'#c86030'};
+const SECTOR_SENTIMENTS = {IT:'bull',Banking:'bull',Energy:'neut',Metals:'bear',FMCG:'neut',NBFC:'neut',Pharma:'bull',Infra:'neut'};
+
+const SAVED_VIEWS = [
+  {label:'All Holdings',  filters:{style:'all',sig:'all',perf:'all'}},
+  {label:'Swing Trades',  filters:{style:'swing',sig:'all',perf:'all'}},
+  {label:'Buy Signals',   filters:{style:'all',sig:'BUY',perf:'all'}},
+  {label:'Today Gainers', filters:{style:'all',sig:'all',perf:'gainers'}},
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  styleFilter:'all', sigFilter:'all', perfFilter:'all',
+  search:'', sortKey:'sym', sortDir:1, view:'group',
+  page:1, pageSize:20, openSectors:new Set(SECTORS),
+  pinnedSet: new Set(ALL_STOCKS.filter(s=>s.pinned).map(s=>s.sym)),
+  activeView: 0,
+};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const pl    = s => ((s.ltp - s.avg) / s.avg * 100).toFixed(1);
+const plAmt = s => ((s.ltp - s.avg) * s.qty);
+const isUp  = s => s.ltp >= s.avg;
+const fmt   = n => n >= 0 ? `+${n}` : `${n}`;
+const sparkSVG = (up) => {
+  const bars = Array.from({length:8},()=>Math.floor(20+Math.random()*80));
+  return bars.map((h,i)=>`<div class="spk" style="height:${h}%;background:${up?'var(--green)':'var(--red)'};opacity:${.4+i*.08}"></div>`).join('');
+};
+const confColor = c => c>=70?'var(--green)':c>=50?'var(--yellow)':'var(--red)';
+
+// ── FILTER LOGIC ──────────────────────────────────────────────────────────────
+function getFiltered(){
+  return ALL_STOCKS.filter(s=>{
+    if(state.styleFilter !== 'all' && s.style !== state.styleFilter) return false;
+    if(state.sigFilter   !== 'all' && s.signal !== state.sigFilter)  return false;
+    if(state.perfFilter === 'gainers' && s.chg < 0) return false;
+    if(state.perfFilter === 'losers'  && s.chg > 0) return false;
+    if(state.search){
+      const q = state.search.toLowerCase();
+      if(!s.sym.toLowerCase().includes(q) && !s.name.toLowerCase().includes(q) && !s.sector.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>{
+    const k = state.sortKey;
+    let va = a[k], vb = b[k];
+    if(k==='pinned'){va=state.pinnedSet.has(a.sym)?1:0;vb=state.pinnedSet.has(b.sym)?1:0;}
+    if(typeof va==='string') return va.localeCompare(vb)*state.sortDir;
+    return (va-vb)*state.sortDir;
+  });
+}
+
+// ── RENDER MAIN ───────────────────────────────────────────────────────────────
+function render(){
+  renderPinned();
+  renderPerformers();
+  renderCharts();
+  if(state.view==='group') renderGrouped();
+  else renderFlat();
+}
+
+function renderPinned(){
+  const pinned = ALL_STOCKS.filter(s=>state.pinnedSet.has(s.sym));
+  const el = document.getElementById('pinnedBar');
+  if(!pinned.length){el.innerHTML='';return;}
+  el.innerHTML = pinned.map(s=>`
+    <div class="pin-chip" onclick="openDetail('${s.sym}')">
+      <span style="font-size:10px;color:var(--amber)">📌</span>
+      <span class="pin-chip-sym">${s.sym}</span>
+      <span class="pin-chip-val" style="color:${s.chg>=0?'var(--green)':'var(--red)'}">${fmt(s.chg)}%</span>
+      <span class="sig-badge ${s.signal==='BUY'?'sb-buy':s.signal==='SELL'?'sb-sell':'sb-hold'}" style="font-size:8px">${s.signal}</span>
+    </div>`).join('');
+}
+
+function renderPerformers(){
+  const sorted = [...ALL_STOCKS].sort((a,b)=>b.chg-a.chg);
+  const top3   = sorted.slice(0,3);
+  const bot3   = sorted.slice(-3).reverse();
+
+  const row = (s,up)=>`<div class="perf-row">
+    <div class="perf-sym">${s.sym}</div>
+    <div class="perf-bar-t"><div class="perf-bar-f" style="width:${Math.abs(s.chg)*25}%;background:${up?'var(--green)':'var(--red)'}"></div></div>
+    <div class="perf-pct" style="color:${up?'var(--green)':'var(--red)'}">${fmt(s.chg)}%</div>
+    <span class="sig-badge ${s.signal==='BUY'?'sb-buy':s.signal==='SELL'?'sb-sell':'sb-hold'}">${s.signal}</span>
+  </div>`;
+
+  document.getElementById('topPerformers').innerHTML  = top3.map(s=>row(s,true)).join('');
+  document.getElementById('worstPerformers').innerHTML = bot3.map(s=>row(s,false)).join('');
+}
+
+function renderCharts(){
+  // Sector allocation - draw on canvas
+  const secCanvas = document.getElementById('sectorChart');
+  const sCtx = secCanvas.getContext('2d');
+  secCanvas.width = secCanvas.offsetWidth || 400;
+  secCanvas.height = 130;
+  const W = secCanvas.width, H = secCanvas.height;
+  sCtx.clearRect(0,0,W,H);
+
+  const secTotals = {};
+  ALL_STOCKS.forEach(s=>{secTotals[s.sector]=(secTotals[s.sector]||0)+s.ltp*s.qty});
+  const total = Object.values(secTotals).reduce((a,b)=>a+b,0);
+  const sectors = Object.entries(secTotals).sort((a,b)=>b[1]-a[1]);
+
+  let x = 12;
+  const barH = 18, gap = 10, labelW = 72;
+  sectors.forEach(([sec,val],i)=>{
+    const pct = val/total;
+    const barW = (W-labelW-24)*pct;
+    const y = 8 + i*(barH+gap);
+    if(y+barH > H) return;
+    sCtx.fillStyle = SECTOR_COLORS[sec]||'#888';
+    sCtx.fillRect(labelW, y, barW, barH);
+    sCtx.fillStyle = '#5a7090';
+    sCtx.font = '9px Space Mono, monospace';
+    sCtx.fillText(sec, 8, y+12);
+    sCtx.fillStyle = SECTOR_COLORS[sec]||'#888';
+    sCtx.font = '9px Space Mono, monospace';
+    sCtx.fillText(`${(pct*100).toFixed(0)}%`, labelW+barW+4, y+12);
+  });
+
+  // Signal dist - draw bars
+  const sigCanvas = document.getElementById('signalChart');
+  const gCtx = sigCanvas.getContext('2d');
+  sigCanvas.width = sigCanvas.offsetWidth || 400;
+  sigCanvas.height = 130;
+  const W2 = sigCanvas.width;
+  gCtx.clearRect(0,0,W2,130);
+
+  const counts = {BUY:0,SELL:0,HOLD:0};
+  ALL_STOCKS.forEach(s=>counts[s.signal]++);
+  const maxC = Math.max(...Object.values(counts));
+  const cols = {BUY:'#18c87a',SELL:'#e83048',HOLD:'#f0c020'};
+  const bW = 70, bGap = 30;
+  const startX = (W2 - (3*(bW+bGap)-bGap))/2;
+
+  Object.entries(counts).forEach(([sig,cnt],i)=>{
+    const barH = (cnt/maxC)*90;
+    const x2 = startX + i*(bW+bGap);
+    const y2 = 100-barH;
+    gCtx.fillStyle = cols[sig]+'44';
+    gCtx.fillRect(x2,100-90,bW,90);
+    gCtx.fillStyle = cols[sig];
+    gCtx.fillRect(x2,y2,bW,barH);
+    gCtx.fillStyle = cols[sig];
+    gCtx.font = 'bold 18px Space Mono, monospace';
+    gCtx.textAlign='center';
+    gCtx.fillText(cnt, x2+bW/2, y2-6);
+    gCtx.fillStyle = '#5a7090';
+    gCtx.font = '10px Barlow, sans-serif';
+    gCtx.fillText(sig, x2+bW/2, 118);
+  });
+}
+
+// ── GROUP VIEW ────────────────────────────────────────────────────────────────
+function renderGrouped(){
+  const filtered = getFiltered();
+  const bySecRaw = {};
+  filtered.forEach(s=>{(bySecRaw[s.sector]=bySecRaw[s.sector]||[]).push(s)});
+
+  // Pinned always on top
+  const pinnedStocks = filtered.filter(s=>state.pinnedSet.has(s.sym));
+  let html = '';
+
+  if(pinnedStocks.length){
+    html += buildSectorBlock('📌 Pinned',pinnedStocks,'#e8a020',true,true);
+  }
+
+  Object.entries(bySecRaw).forEach(([sec,stocks])=>{
+    html += buildSectorBlock(sec, stocks, SECTOR_COLORS[sec]||'#888', state.openSectors.has(sec));
+  });
+
+  if(!html) html = '<div class="no-results">NO RESULTS · Try adjusting your filters or search query</div>';
+
+  document.getElementById('portfolioArea').innerHTML = html;
+  document.getElementById('pagination').innerHTML = '';
+}
+
+function buildSectorBlock(sec, stocks, color, isOpen, isPinnedGroup=false){
+  const sentiment  = SECTOR_SENTIMENTS[sec]||'neut';
+  const pillCls    = isPinnedGroup?'sp-bull':sentiment==='bull'?'sp-bull':sentiment==='bear'?'sp-bear':'sp-neut';
+  const pillLbl    = isPinnedGroup?'PINNED':sentiment==='bull'?'BULLISH':sentiment==='bear'?'BEARISH':'NEUTRAL';
+  const totalVal   = stocks.reduce((s,x)=>s+x.ltp*x.qty,0);
+  const chevCls    = isOpen?'open':'';
+  const bodyStyle  = isOpen?'max-height:2000px':'max-height:0';
+  const id         = `sg_${sec.replace(/[^a-z0-9]/gi,'_')}`;
+
+  return `<div class="sector-group">
+    <div class="sector-hdr" onclick="toggleSector('${sec}','${id}')">
+      <div class="sector-dot" style="background:${color}"></div>
+      <div class="sector-name">${sec}</div>
+      <span class="sector-pill ${pillCls}">${pillLbl}</span>
+      <div class="sector-meta">
+        ${stocks.length} stocks · ₹${(totalVal/100000).toFixed(1)}L
+      </div>
+      <div class="chevron ${chevCls}" id="chev_${id}">▼</div>
+    </div>
+    <div class="sector-body" id="${id}" style="${bodyStyle}">
+      <table class="stk-table">
+        <thead>
+          <tr>
+            <th style="width:28px"></th>
+            <th class="sort-hdr" onclick="setSort('sym')">Symbol <span class="sort-arr ${state.sortKey==='sym'?'on':''}">▼</span></th>
+            <th class="sort-hdr" onclick="setSort('style')">Style <span class="sort-arr ${state.sortKey==='style'?'on':''}">▼</span></th>
+            <th class="sort-hdr" onclick="setSort('ltp')">LTP <span class="sort-arr ${state.sortKey==='ltp'?'on':''}">▼</span></th>
+            <th class="sort-hdr" onclick="setSort('chg')">Chg% <span class="sort-arr ${state.sortKey==='chg'?'on':''}">▼</span></th>
+            <th>7d Trend</th>
+            <th class="sort-hdr" onclick="setSort('vol')">Volume <span class="sort-arr ${state.sortKey==='vol'?'on':''}">▼</span></th>
+            <th class="sort-hdr" onclick="setSort('conf')">Confidence <span class="sort-arr ${state.sortKey==='conf'?'on':''}">▼</span></th>
+            <th>Signal</th>
+            <th class="sort-hdr" onclick="setSort('chg')">P&L <span class="sort-arr">▼</span></th>
+          </tr>
+        </thead>
+        <tbody>${stocks.map(s=>buildStockRow(s)).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function buildStockRow(s){
+  const up = isUp(s);
+  const plv = pl(s);
+  const plAmtV = plAmt(s);
+  const styleColor = s.style==='long-term'?'#3090f8':s.style==='swing'?'#e8a020':'#30d0c8';
+  const isPinned = state.pinnedSet.has(s.sym);
+  const volM = (s.vol/1000000).toFixed(1)+'M';
+  const cC = confColor(s.conf);
+
+  return `<tr class="stk-row" onclick="openDetail('${s.sym}')">
+    <td onclick="event.stopPropagation()">
+      <button class="pin-btn ${isPinned?'pinned':''}" onclick="togglePin('${s.sym}')">${isPinned?'★':'☆'}</button>
+    </td>
+    <td>
+      <div class="sym-cell">
+        <div class="style-dot" style="background:${styleColor}"></div>
+        <div>
+          <div class="sym-txt">${s.sym}</div>
+          <div class="sym-name">${s.name}</div>
+        </div>
+      </div>
+    </td>
+    <td><span style="font-size:10px;color:${styleColor};background:${styleColor}18;padding:2px 7px;border:1px solid ${styleColor}30">${s.style}</span></td>
+    <td class="mono">₹${s.ltp.toLocaleString()}</td>
+    <td class="mono ${s.chg>=0?'up':'dn'}">${fmt(s.chg)}%</td>
+    <td><div class="spark">${sparkSVG(s.chg>=0)}</div></td>
+    <td class="mono" style="color:var(--muted)">${volM}</td>
+    <td>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="conf-bar"><div class="conf-fill" style="width:${s.conf}%;background:${cC}"></div></div>
+        <span class="mono" style="font-size:11px;color:${cC}">${s.conf}%</span>
+      </div>
+    </td>
+    <td><span class="sig-badge ${s.signal==='BUY'?'sb-buy':s.signal==='SELL'?'sb-sell':'sb-hold'}">${s.signal}</span></td>
+    <td class="mono ${up?'up':'dn'}">
+      <div>${up?'+':'-'}₹${Math.abs(plAmtV).toLocaleString()}</div>
+      <div style="font-size:10px">${fmt(plv)}%</div>
+    </td>
+  </tr>`;
+}
+
+// ── FLAT VIEW (paginated) ─────────────────────────────────────────────────────
+function renderFlat(){
+  const filtered = getFiltered();
+  const total    = filtered.length;
+  const pages    = Math.ceil(total/state.pageSize);
+  const start    = (state.page-1)*state.pageSize;
+  const slice    = filtered.slice(start, start+state.pageSize);
+
+  let html = `<div class="sector-group">
+    <table class="stk-table">
+      <thead>
+        <tr>
+          <th style="width:28px"></th>
+          <th class="sort-hdr" onclick="setSort('sym')">Symbol <span class="sort-arr ${state.sortKey==='sym'?'on':''}">▼</span></th>
+          <th>Sector</th>
+          <th class="sort-hdr" onclick="setSort('style')">Style <span class="sort-arr">▼</span></th>
+          <th class="sort-hdr" onclick="setSort('ltp')">LTP <span class="sort-arr ${state.sortKey==='ltp'?'on':''}">▼</span></th>
+          <th class="sort-hdr" onclick="setSort('chg')">Chg% <span class="sort-arr ${state.sortKey==='chg'?'on':''}">▼</span></th>
+          <th>Trend</th>
+          <th class="sort-hdr" onclick="setSort('vol')">Volume <span class="sort-arr">▼</span></th>
+          <th class="sort-hdr" onclick="setSort('conf')">Conf <span class="sort-arr">▼</span></th>
+          <th>Signal</th>
+          <th>P&L</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  if(!slice.length) html += `<tr><td colspan="11"><div class="no-results">NO RESULTS</div></td></tr>`;
+  slice.forEach(s=>{
+    const up=isUp(s),plv=pl(s),plAmtV=plAmt(s);
+    const styleColor=s.style==='long-term'?'#3090f8':s.style==='swing'?'#e8a020':'#30d0c8';
+    const isPinned=state.pinnedSet.has(s.sym);
+    const cC=confColor(s.conf);
+    html+=`<tr class="stk-row" onclick="openDetail('${s.sym}')">
+      <td onclick="event.stopPropagation()"><button class="pin-btn ${isPinned?'pinned':''}" onclick="togglePin('${s.sym}')">${isPinned?'★':'☆'}</button></td>
+      <td><div class="sym-cell"><div class="style-dot" style="background:${styleColor}"></div><div><div class="sym-txt">${s.sym}</div><div class="sym-name">${s.name}</div></div></div></td>
+      <td><span style="font-size:10px;color:${SECTOR_COLORS[s.sector]||'#888'}">${s.sector}</span></td>
+      <td><span style="font-size:10px;color:${styleColor}">${s.style}</span></td>
+      <td class="mono">₹${s.ltp.toLocaleString()}</td>
+      <td class="mono ${s.chg>=0?'up':'dn'}">${fmt(s.chg)}%</td>
+      <td><div class="spark">${sparkSVG(s.chg>=0)}</div></td>
+      <td class="mono" style="color:var(--muted)">${(s.vol/1000000).toFixed(1)}M</td>
+      <td><div style="display:flex;align-items:center;gap:5px"><div class="conf-bar"><div class="conf-fill" style="width:${s.conf}%;background:${cC}"></div></div><span class="mono" style="font-size:10px;color:${cC}">${s.conf}%</span></div></td>
+      <td><span class="sig-badge ${s.signal==='BUY'?'sb-buy':s.signal==='SELL'?'sb-sell':'sb-hold'}">${s.signal}</span></td>
+      <td class="mono ${up?'up':'dn'}"><div>${up?'+':'-'}₹${Math.abs(plAmtV).toLocaleString()}</div><div style="font-size:10px">${fmt(plv)}%</div></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  document.getElementById('portfolioArea').innerHTML = html;
+
+  // Pagination
+  if(pages > 1){
+    let pgHtml = '';
+    if(state.page>1) pgHtml+=`<div class="pg-btn" onclick="goPage(${state.page-1})">◀</div>`;
+    for(let i=1;i<=pages;i++) pgHtml+=`<div class="pg-btn ${i===state.page?'on':''}" onclick="goPage(${i})">${i}</div>`;
+    if(state.page<pages) pgHtml+=`<div class="pg-btn" onclick="goPage(${state.page+1})">▶</div>`;
+    document.getElementById('pagination').innerHTML = pgHtml;
+  } else {
+    document.getElementById('pagination').innerHTML='';
+  }
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function toggleSector(sec, id){
+  if(state.openSectors.has(sec)) state.openSectors.delete(sec);
+  else state.openSectors.add(sec);
+  const body = document.getElementById(id);
+  const chev = document.getElementById('chev_'+id);
+  if(body){body.style.maxHeight=state.openSectors.has(sec)?'2000px':'0';}
+  if(chev){chev.classList.toggle('open',state.openSectors.has(sec));}
+}
+
+function togglePin(sym){
+  const s = ALL_STOCKS.find(x=>x.sym===sym);
+  if(!s) return;
+  if(state.pinnedSet.has(sym)){state.pinnedSet.delete(sym);s.pinned=false;}
+  else{state.pinnedSet.add(sym);s.pinned=true;}
+  showToast(state.pinnedSet.has(sym)?`📌 ${sym} pinned`:`${sym} unpinned`);
+  render();
+}
+
+function setSort(key){
+  if(state.sortKey===key) state.sortDir*=-1;
+  else{state.sortKey=key;state.sortDir=-1;}
+  render();
+}
+
+function setView(v){
+  state.view=v;state.page=1;
+  document.getElementById('groupBtn').classList.toggle('on',v==='group');
+  document.getElementById('flatBtn').classList.toggle('on',v==='flat');
+  render();
+}
+
+function goPage(p){state.page=p;render();}
+
+function openDetail(sym){
+  showToast(`Opening ${sym} analysis…`);
+}
+
+// ── FILTER BUTTONS ────────────────────────────────────────────────────────────
+document.getElementById('styleFilter').addEventListener('click',e=>{
+  const btn=e.target.closest('.ctrl-btn');if(!btn)return;
+  document.querySelectorAll('#styleFilter .ctrl-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  state.styleFilter=btn.dataset.style;state.page=1;render();
+});
+document.getElementById('signalFilter').addEventListener('click',e=>{
+  const btn=e.target.closest('.ctrl-btn');if(!btn)return;
+  document.querySelectorAll('#signalFilter .ctrl-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  state.sigFilter=btn.dataset.sig;state.page=1;render();
+});
+document.getElementById('perfFilter').addEventListener('click',e=>{
+  const btn=e.target.closest('.ctrl-btn');if(!btn)return;
+  document.querySelectorAll('#perfFilter .ctrl-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  state.perfFilter=btn.dataset.perf;state.page=1;render();
+});
+
+// ── SEARCH WITH TYPEAHEAD ─────────────────────────────────────────────────────
+const searchEl = document.getElementById('searchInput');
+const suggsEl  = document.getElementById('suggestions');
+
+searchEl.addEventListener('input', ()=>{
+  const q = searchEl.value.trim().toLowerCase();
+  state.search = q;state.page=1;
+
+  if(q.length >= 1){
+    const matches = ALL_STOCKS.filter(s=>
+      s.sym.toLowerCase().startsWith(q) ||
+      s.name.toLowerCase().includes(q)  ||
+      s.sector.toLowerCase().includes(q)
+    ).slice(0,6);
+
+    suggsEl.innerHTML = matches.map(s=>`
+      <div class="sugg-item" onclick="selectSugg('${s.sym}')">
+        <div class="sugg-sym">${s.sym}</div>
+        <div>
+          <div style="font-size:11px;color:var(--txt)">${s.name}</div>
+          <div class="sugg-name">${s.sector}</div>
+        </div>
+        <span class="sig-badge ${s.signal==='BUY'?'sb-buy':s.signal==='SELL'?'sb-sell':'sb-hold'}" style="margin-left:auto">${s.signal}</span>
+      </div>`).join('');
+    suggsEl.classList.toggle('open', matches.length>0);
+  } else {
+    suggsEl.classList.remove('open');
+  }
+  render();
+});
+
+function selectSugg(sym){
+  const s = ALL_STOCKS.find(x=>x.sym===sym);
+  if(s){searchEl.value=s.sym;state.search=s.sym.toLowerCase();}
+  suggsEl.classList.remove('open');
+  render();
+}
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.search-wrap')) suggsEl.classList.remove('open');
+});
+
+searchEl.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){searchEl.value='';state.search='';suggsEl.classList.remove('open');render();}
+});
+
+// ── SAVED VIEWS ────────────────────────────────────────────────────────────────
+function renderSavedViews(){
+  document.getElementById('savedViews').innerHTML = SAVED_VIEWS.map((v,i)=>`
+    <div class="sv-chip ${i===state.activeView?'on':''}" onclick="applyView(${i})">${v.label}</div>
+  `).join('') + `<div class="sv-chip" onclick="saveCurrentView()">+ Save View</div>`;
+}
+
+function applyView(i){
+  state.activeView=i;
+  const f=SAVED_VIEWS[i].filters;
+  state.styleFilter=f.style;state.sigFilter=f.sig;state.perfFilter=f.perf;
+  state.page=1;
+
+  document.querySelectorAll('#styleFilter .ctrl-btn').forEach(b=>{
+    b.classList.toggle('on',b.dataset.style===f.style);
+  });
+  document.querySelectorAll('#signalFilter .ctrl-btn').forEach(b=>{
+    b.classList.toggle('on',b.dataset.sig===f.sig);
+  });
+  document.querySelectorAll('#perfFilter .ctrl-btn').forEach(b=>{
+    b.classList.toggle('on',b.dataset.perf===f.perf);
+  });
+
+  renderSavedViews();render();
+}
+
+function saveCurrentView(){
+  const name=`Custom ${SAVED_VIEWS.length}`;
+  SAVED_VIEWS.push({label:name,filters:{style:state.styleFilter,sig:state.sigFilter,perf:state.perfFilter}});
+  state.activeView=SAVED_VIEWS.length-1;
+  showToast(`✓ View "${name}" saved`);
+  renderSavedViews();
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const filtered=getFiltered();
+  const headers=['Symbol','Name','Sector','Style','LTP','Avg Price','Qty','P&L%','Chg%','Volume','Signal','Confidence'];
+  const rows=filtered.map(s=>[
+    s.sym,`"${s.name}"`,s.sector,s.style,s.ltp,s.avg,s.qty,pl(s),s.chg,s.vol,s.signal,s.conf
+  ]);
+  const csv=[headers,...rows].map(r=>r.join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='stocksense_portfolio.csv';
+  a.click();
+  showToast('↓ Portfolio exported as CSV');
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg){
+  const old=document.querySelector('.toast');if(old)old.remove();
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),2200);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderSavedViews();
+render();
+
+// Redraw charts on resize
+window.addEventListener('resize',()=>{renderCharts();});
+</script>
+</body>
+</html>
