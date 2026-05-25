@@ -1,0 +1,561 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.shell{padding:1rem 0;font-size:13px}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem}
+.tab{padding:7px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s}
+.tab.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.tab:hover:not(.active){background:var(--color-background-secondary)}
+
+.panel{display:none}.panel.active{display:block}
+
+.section-label{font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--color-text-secondary);margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.section-label:first-child{margin-top:0}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.card.clickable{cursor:pointer;transition:border-color .15s,transform .1s}
+.card.clickable:hover{border-color:var(--color-border-secondary);transform:translateY(-1px)}
+.card.clickable:active{transform:scale(0.98)}
+
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.card-name{font-size:13px;font-weight:500;color:var(--color-text-primary)}
+.card-body{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+.card-footer{margin-top:10px;padding-top:8px;border-top:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-tertiary)}
+
+.pill{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.p-green{background:#EAF3DE;color:#27500A}
+.p-red{background:#FCEBEB;color:#791F1F}
+.p-amber{background:#FAEEDA;color:#633806}
+.p-blue{background:#E6F1FB;color:#0C447C}
+.p-purple{background:#EEEDFE;color:#3C3489}
+.p-teal{background:#E1F5EE;color:#085041}
+.p-gray{background:#F1EFE8;color:#444441}
+
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 10px;border-radius:var(--border-radius-md)}
+.b-success{background:var(--color-background-success);color:var(--color-text-success)}
+.b-danger{background:var(--color-background-danger);color:var(--color-text-danger)}
+.b-warning{background:var(--color-background-warning);color:var(--color-text-warning)}
+.b-info{background:var(--color-background-info);color:var(--color-text-info)}
+
+.rule-block{border-left:2px solid var(--color-border-info);border-radius:0;padding:10px 14px;background:var(--color-background-secondary);border-radius:0 var(--border-radius-md) var(--border-radius-md) 0;margin-bottom:8px}
+.rule-title{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:3px}
+.rule-body{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+
+.rule-block.green{border-color:#639922}
+.rule-block.red{border-color:#E24B4A}
+.rule-block.amber{border-color:#BA7517}
+.rule-block.purple{border-color:#7F77DD}
+.rule-block.teal{border-color:#1D9E75}
+
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:1rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.stat-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--color-text-secondary);margin-bottom:4px}
+.stat-val{font-size:18px;font-weight:500;color:var(--color-text-primary)}
+.stat-sub{font-size:11px;color:var(--color-text-tertiary);margin-top:2px}
+
+.checklist{display:flex;flex-direction:column;gap:6px}
+.check{display:flex;align-items:flex-start;gap:10px;padding:9px 12px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary)}
+.check-num{min-width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;flex-shrink:0;margin-top:1px}
+.n-green{background:#EAF3DE;color:#27500A}
+.n-red{background:#FCEBEB;color:#791F1F}
+.n-amber{background:#FAEEDA;color:#633806}
+.n-blue{background:#E6F1FB;color:#0C447C}
+.n-purple{background:#EEEDFE;color:#3C3489}
+.check-text{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.check-text strong{color:var(--color-text-primary);font-weight:500}
+
+.setup-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px;margin-bottom:10px}
+.setup-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.setup-name{font-size:14px;font-weight:500;color:var(--color-text-primary)}
+.setup-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.setup-body{font-size:12px;color:var(--color-text-secondary);line-height:1.7}
+.setup-divider{height:0.5px;background:var(--color-border-tertiary);margin:10px 0}
+.setup-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.setup-field label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--color-text-tertiary);display:block;margin-bottom:2px}
+.setup-field span{font-size:12px;color:var(--color-text-primary);font-weight:500}
+
+.mindset-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px}
+.mindset-icon{font-size:20px;margin-bottom:8px;color:var(--color-text-secondary)}
+.mindset-title{font-size:13px;font-weight:500;color:var(--color-text-primary);margin-bottom:6px}
+.mindset-body{font-size:12px;color:var(--color-text-secondary);line-height:1.6}
+
+.ask-btn{width:100%;margin-top:1rem;padding:10px;text-align:center;font-size:12px;cursor:pointer;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary)}
+.ask-btn:hover{background:var(--color-background-secondary)}
+
+.risk-bar-wrap{margin:8px 0 4px}
+.risk-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.risk-bar-label{font-size:11px;color:var(--color-text-secondary);width:80px;flex-shrink:0}
+.risk-bar-track{flex:1;height:6px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:3px}
+.risk-val{font-size:11px;font-weight:500;width:36px;text-align:right;color:var(--color-text-primary)}
+
+.signal-entry{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.signal-entry:last-child{border-bottom:none}
+.signal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.sd-green{background:#639922}
+.sd-red{background:#E24B4A}
+.sd-amber{background:#BA7517}
+.signal-text{font-size:12px;color:var(--color-text-secondary);line-height:1.5}
+.signal-text strong{color:var(--color-text-primary);font-weight:500}
+
+.rr-calc{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;margin-top:8px}
+.rr-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px}
+.rr-row:last-child{margin-bottom:0;border-top:0.5px solid var(--color-border-tertiary);padding-top:6px;margin-top:6px}
+.rr-label{color:var(--color-text-secondary)}
+.rr-val{font-weight:500;color:var(--color-text-primary)}
+</style>
+
+<div class="shell">
+<h2 class="sr-only">Pro trader strategies playbook — intraday, swing, and low-risk approaches</h2>
+
+<div class="tabs">
+  <button class="tab active" onclick="show('intraday',this)">Intraday</button>
+  <button class="tab" onclick="show('swing',this)">Swing trade</button>
+  <button class="tab" onclick="show('entry',this)">Entry signals</button>
+  <button class="tab" onclick="show('exit',this)">Exit rules</button>
+  <button class="tab" onclick="show('risk',this)">Risk control</button>
+  <button class="tab" onclick="show('mindset',this)">Mindset</button>
+</div>
+
+<!-- ══ INTRADAY ══ -->
+<div id="intraday" class="panel active">
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Time frame</div><div class="stat-val">5–15 min</div><div class="stat-sub">candles</div></div>
+    <div class="stat"><div class="stat-label">Hold time</div><div class="stat-val">mins–hrs</div><div class="stat-sub">square off by 3:15</div></div>
+    <div class="stat"><div class="stat-label">Win rate target</div><div class="stat-val">45–55%</div><div class="stat-sub">with 1:2 R:R</div></div>
+    <div class="stat"><div class="stat-label">Max trades/day</div><div class="stat-val">3–5</div><div class="stat-sub">quality not quantity</div></div>
+  </div>
+
+  <div class="section-label">Strategy 1 — ORB (Opening Range Breakout)</div>
+  <div class="setup-card">
+    <div class="setup-head">
+      <span class="setup-name">Opening Range Breakout</span>
+      <span class="pill p-green">Low risk</span>
+    </div>
+    <div class="setup-meta">
+      <span class="badge b-info"><i class="ti ti-clock" aria-hidden="true"></i> 9:15–9:45 AM setup</span>
+      <span class="badge b-success">Win rate ~55%</span>
+      <span class="badge b-info">R:R 1:2</span>
+    </div>
+    <div class="setup-body">Mark the high and low of the first 15–30 minutes after market opens. This range is your battlefield. Wait for a clean breakout above the high (long) or below the low (short) with volume 1.5× average confirming the break. The first breakout of the day is the most powerful — institutions set their bias in this window.
+    </div>
+    <div class="setup-divider"></div>
+    <div class="setup-row">
+      <div class="setup-field"><label>Entry</label><span>Break + close above/below range</span></div>
+      <div class="setup-field"><label>Stop loss</label><span>Opposite end of ORB range</span></div>
+      <div class="setup-field"><label>Target 1</label><span>1× range width from breakout</span></div>
+      <div class="setup-field"><label>Target 2</label><span>2× range width — move SL to entry</span></div>
+    </div>
+    <div class="setup-divider"></div>
+    <div class="checklist" style="margin-top:0">
+      <div class="check"><span class="check-num n-green">1</span><span class="check-text"><strong>Avoid ORB on result days, RBI policy days, Budget day</strong> — news breaks the pattern</span></div>
+      <div class="check"><span class="check-num n-green">2</span><span class="check-text"><strong>Gap-up open ORB</strong> — if Nifty gaps up and stock gaps up too, buy the ORB high. Most powerful setup.</span></div>
+      <div class="check"><span class="check-num n-red">3</span><span class="check-text"><strong>Skip if range is wider than 3% of stock price</strong> — risk is too large</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Strategy 2 — VWAP mean reversion</div>
+  <div class="setup-card">
+    <div class="setup-head">
+      <span class="setup-name">VWAP bounce trade</span>
+      <span class="pill p-blue">Medium risk</span>
+    </div>
+    <div class="setup-meta">
+      <span class="badge b-info"><i class="ti ti-clock" aria-hidden="true"></i> 10 AM – 2 PM</span>
+      <span class="badge b-success">Win rate ~52%</span>
+      <span class="badge b-info">R:R 1:2.5</span>
+    </div>
+    <div class="setup-body">VWAP acts as a magnet — price always returns to it. Strong stocks bounce from below VWAP to above. Weak stocks fail at VWAP and continue lower. Wait for price to pull back to VWAP after trending away. Enter on the touch + first green candle closing above VWAP (for longs). Works best between 10 AM and 1 PM.</div>
+    <div class="setup-divider"></div>
+    <div class="setup-row">
+      <div class="setup-field"><label>Entry (long)</label><span>Price touches VWAP + bounces with volume</span></div>
+      <div class="setup-field"><label>Stop loss</label><span>2–3 candles below VWAP</span></div>
+      <div class="setup-field"><label>Target</label><span>Day high or 2× stop distance</span></div>
+      <div class="setup-field"><label>Avoid</label><span>If price has crossed VWAP 3+ times</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Strategy 3 — EMA pullback (trend continuation)</div>
+  <div class="setup-card">
+    <div class="setup-head">
+      <span class="setup-name">9 EMA / 21 EMA pullback</span>
+      <span class="pill p-green">Low-medium risk</span>
+    </div>
+    <div class="setup-meta">
+      <span class="badge b-info"><i class="ti ti-clock" aria-hidden="true"></i> Any time in trend</span>
+      <span class="badge b-success">Win rate ~58%</span>
+      <span class="badge b-info">R:R 1:3</span>
+    </div>
+    <div class="setup-body">On a 5-min or 15-min chart, wait for a clear uptrend with EMA9 above EMA21. Price will pull back to test EMA21. Enter when price bounces off EMA21 with a bullish candle. This is trading with the trend — the highest probability intraday play. Never fight the EMA order.</div>
+    <div class="setup-divider"></div>
+    <div class="setup-row">
+      <div class="setup-field"><label>Condition</label><span>EMA9 above EMA21, ADX &gt; 25</span></div>
+      <div class="setup-field"><label>Entry</label><span>Price touches EMA21, closes green</span></div>
+      <div class="setup-field"><label>Stop loss</label><span>Below EMA21 by 1 ATR</span></div>
+      <div class="setup-field"><label>Target</label><span>Previous swing high</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Golden rules of intraday</div>
+  <div class="checklist">
+    <div class="check"><span class="check-num n-red">!</span><span class="check-text"><strong>Never trade 9:15–9:30 AM</strong> — this is the panic zone. Let the dust settle. Your entry comes after clarity, not chaos.</span></div>
+    <div class="check"><span class="check-num n-red">!</span><span class="check-text"><strong>Square off by 3:15 PM, no exceptions</strong> — holding into close is gambling, not trading.</span></div>
+    <div class="check"><span class="check-num n-amber">2</span><span class="check-text"><strong>Align with Nifty direction</strong> — if Nifty is falling, only take short trades. Never long a stock in a falling market.</span></div>
+    <div class="check"><span class="check-num n-amber">3</span><span class="check-text"><strong>Only trade 3–5 setups/day max</strong> — overtrading is the #1 killer. More trades = more fees + more emotional errors.</span></div>
+    <div class="check"><span class="check-num n-blue">4</span><span class="check-text"><strong>Use only stocks with high liquidity</strong> — Nifty 50 or Nifty 200 stocks. Wide bid-ask spreads eat your profit.</span></div>
+    <div class="check"><span class="check-num n-blue">5</span><span class="check-text"><strong>Stop after 2 consecutive losses</strong> — your mindset is broken. Walk away. Revenge trading destroys accounts.</span></div>
+  </div>
+  <button class="ask-btn" onclick="sendPrompt('Give me a full intraday trading plan with specific entry and exit rules for ORB strategy ↗')">Ask for a full intraday plan ↗</button>
+</div>
+
+<!-- ══ SWING ══ -->
+<div id="swing" class="panel">
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Time frame</div><div class="stat-val">Daily</div><div class="stat-sub">weekly for bias</div></div>
+    <div class="stat"><div class="stat-label">Hold time</div><div class="stat-val">3–15 days</div><div class="stat-sub">sometimes 4–6 wks</div></div>
+    <div class="stat"><div class="stat-label">Win rate target</div><div class="stat-val">50–60%</div><div class="stat-sub">with 1:3 R:R</div></div>
+    <div class="stat"><div class="stat-label">Capital per trade</div><div class="stat-val">5–10%</div><div class="stat-sub">of total portfolio</div></div>
+  </div>
+
+  <div class="section-label">Strategy 1 — Trend pullback to key support</div>
+  <div class="setup-card">
+    <div class="setup-head">
+      <span class="setup-name">Pullback to SMA 21</span>
+      <span class="pill p-green">Highest probability</span>
+    </div>
+    <div class="setup-meta">
+      <span class="badge b-success">Win rate ~60%</span>
+      <span class="badge b-info">R:R 1:3</span>
+      <span class="badge b-warning">Hold 5–15 days</span>
+    </div>
+    <div class="setup-body">The cleanest swing trade. Stock in a clear uptrend (above SMA50 and SMA200 on daily). Price pulls back to test SMA21. RSI cools to 40–55 range (healthy reset). Enter on the first daily close back above SMA21. Volume should dry up on the pullback — that means sellers are exhausted. This is institutional accumulation in disguise.</div>
+    <div class="setup-divider"></div>
+    <div class="setup-row">
+      <div class="setup-field"><label>Filter</label><span>Above SMA50, SMA200. RSI was &gt;60 before pullback</span></div>
+      <div class="setup-field"><label>Entry</label><span>Daily close above SMA21, volume expanding</span></div>
+      <div class="setup-field"><label>Stop loss</label><span>Below recent swing low (below SMA50)</span></div>
+      <div class="setup-field"><label>Target</label><span>Previous all-time high or 3× stop distance</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Strategy 2 — Breakout from consolidation</div>
+  <div class="setup-card">
+    <div class="setup-head">
+      <span class="setup-name">Range breakout + volume surge</span>
+      <span class="pill p-blue">Medium risk, high reward</span>
+    </div>
+    <div class="setup-meta">
+      <span class="badge b-success">Win rate ~50%</span>
+      <span class="badge b-info">R:R 1:4</span>
+      <span class="badge b-warning">Hold 1–4 weeks</span>
+    </div>
+    <div class="setup-body">Stock consolidates in a tight range for 15–30+ days. The longer the base, the bigger the move. Volume contracts during consolidation (base building). On breakout day, volume should be 2–3× average — this confirms institutions are loading. Enter on breakout candle close. The best breakouts have very tight ranges and explosive volume.</div>
+    <div class="setup-divider"></div>
+    <div class="setup-row">
+      <div class="setup-field"><label>Scan for</label><span>52-week high breakout, or multi-month resistance break</span></div>
+      <div class="setup-field"><label>Entry</label><span>Close above resistance with 2× volume</span></div>
+      <div class="setup-field"><label>Stop loss</label><span>Below breakout candle low or base low</span></div>
+      <div class="setup-field"><label>Avoid</label><span>First-day breakout — wait for retest of breakout level</span></div>
+    </div>
+    <div class="rule-block amber" style="margin-top:10px">
+      <div class="rule-title">Pro tip — buy the retest, not the breakout</div>
+      <div class="rule-body">After a breakout, price often comes back to test the breakout level (old resistance becomes new support). This retest entry has a tighter stop and better R:R than chasing the initial move. More patient, more profitable.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Strategy 3 — Sector rotation swing</div>
+  <div class="setup-card">
+    <div class="setup-head">
+      <span class="setup-name">Buy the strongest stock in the strongest sector</span>
+      <span class="pill p-teal">Systematic</span>
+    </div>
+    <div class="setup-meta">
+      <span class="badge b-success">Win rate ~62%</span>
+      <span class="badge b-info">R:R 1:3</span>
+    </div>
+    <div class="setup-body">Money rotates between sectors. When IT is out of favor, FMCG may be hot. Always find which sector FII money is moving into (check FII sectoral data on NSE). Then within that sector, pick the stock showing the strongest price action and highest relative strength vs its peers. Wind at your back AND stock momentum = highest probability trade.</div>
+    <div class="setup-divider"></div>
+    <div class="setup-row">
+      <div class="setup-field"><label>Step 1</label><span>Find sector with most FII buying (NSE data)</span></div>
+      <div class="setup-field"><label>Step 2</label><span>Find top 3 stocks in that sector by RS rank</span></div>
+      <div class="setup-field"><label>Step 3</label><span>Wait for pullback or breakout setup</span></div>
+      <div class="setup-field"><label>Step 4</label><span>Enter with SL below recent low</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Swing trade checklist before entry</div>
+  <div class="checklist">
+    <div class="check"><span class="check-num n-green">1</span><span class="check-text"><strong>Nifty/Sensex trend is UP on weekly chart</strong> — never swing long in a bear market</span></div>
+    <div class="check"><span class="check-num n-green">2</span><span class="check-text"><strong>Stock above SMA 50 and SMA 200 on daily</strong> — trading with the big trend</span></div>
+    <div class="check"><span class="check-num n-green">3</span><span class="check-text"><strong>RSI between 45–65 at entry</strong> — room to run without being overbought</span></div>
+    <div class="check"><span class="check-num n-blue">4</span><span class="check-text"><strong>Volume confirms the move</strong> — expanding on breakout, contracting on pullback</span></div>
+    <div class="check"><span class="check-num n-blue">5</span><span class="check-text"><strong>No major results, events in next 5 days</strong> — don't hold through binary events without a hedge</span></div>
+    <div class="check"><span class="check-num n-amber">6</span><span class="check-text"><strong>Risk:Reward is at minimum 1:2.5</strong> — if target isn't 2.5× your stop, skip the trade</span></div>
+    <div class="check"><span class="check-num n-purple">7</span><span class="check-text"><strong>Promoter holding stable or increasing</strong> — check last two quarters</span></div>
+  </div>
+  <button class="ask-btn" onclick="sendPrompt('Build me a swing trade scanner criteria to find the best setups in Nifty 200 stocks ↗')">Build a swing trade scanner ↗</button>
+</div>
+
+<!-- ══ ENTRY SIGNALS ══ -->
+<div id="entry" class="panel">
+
+  <div class="section-label">What makes me pull the trigger — buy signals</div>
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-head"><span class="card-name">The 3-confirmation rule</span><span class="pill p-green">Core rule</span></div>
+    <div class="card-body">Never enter on 1 signal. Wait for 3 independent confirmations from 3 different categories (trend + momentum + volume). When all 3 align, the trade has high probability. When only 2 align, it is a watch. When only 1 aligns, do not trade.</div>
+  </div>
+
+  <div class="section-label">Bullish entry signals — all need 3+ to confirm</div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>Price closes above SMA 21 after a pullback</strong> — trend is resuming. The dip buyers are winning.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>RSI crosses above 50 from below</strong> — momentum flipping bullish. Strongest when RSI was oversold first.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>MACD histogram turns positive</strong> — buyers overtaking sellers in momentum. Very reliable signal.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>Volume 1.5–2× average on a green candle</strong> — institutions are buying. Low volume moves are traps.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>Bullish engulfing on daily chart at support</strong> — buyers overwhelm sellers in one candle. Very high probability reversal.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>Stock breaking 52-week high</strong> — the clearest breakout signal. No overhead resistance. Only early sellers remain.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>Golden cross (SMA50 crossing above SMA200)</strong> — rare but one of the highest conviction buy signals for positional trades.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-green"></span><div class="signal-text"><strong>FII buying stock in their portfolio</strong> — if you can see bulk/block deal data showing FII accumulation, ride with them.</div></div>
+
+  <div class="section-label">Bearish signals — when I consider selling or shorting</div>
+  <div class="signal-entry"><span class="signal-dot sd-red"></span><div class="signal-text"><strong>Price breaks below SMA 50 with volume</strong> — uptrend is broken. Exit longs immediately.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-red"></span><div class="signal-text"><strong>RSI divergence — price makes new high but RSI doesn't</strong> — hidden weakness. Smart money selling into strength.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-red"></span><div class="signal-text"><strong>Death cross (SMA50 below SMA200)</strong> — macro trend is broken. Only short-term bounces should be traded long.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-red"></span><div class="signal-text"><strong>High volume red candle breaking support</strong> — distribution. Institutions are exiting. Retail is still buying — don't be them.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-red"></span><div class="signal-text"><strong>Shooting star or bearish engulfing at resistance</strong> — sellers overwhelming buyers at a key level. First sign of reversal.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-amber"></span><div class="signal-text"><strong>OBV falling while price rises</strong> — major divergence. Volume not confirming the move. Exit or tighten stop.</div></div>
+  <div class="signal-entry"><span class="signal-dot sd-amber"></span><div class="signal-text"><strong>Promoter pledge increasing two quarters in a row</strong> — insider stress. Exit before others find out.</div></div>
+
+  <div class="section-label">The entry timing sequence</div>
+  <div class="checklist">
+    <div class="check"><span class="check-num n-blue">1</span><span class="check-text"><strong>Weekly chart first</strong> — confirm the big trend direction. Is the weekly uptrending?</span></div>
+    <div class="check"><span class="check-num n-blue">2</span><span class="check-text"><strong>Daily chart for setup</strong> — find the pattern (pullback, breakout, reversal). Mark key levels.</span></div>
+    <div class="check"><span class="check-num n-blue">3</span><span class="check-text"><strong>1-hour chart for precise entry</strong> — zoom in. Wait for 1H confirmation candle before triggering.</span></div>
+    <div class="check"><span class="check-num n-green">4</span><span class="check-text"><strong>Set limit order — never market order</strong> — know exactly what price you pay. Market orders = slippage theft.</span></div>
+    <div class="check"><span class="check-num n-green">5</span><span class="check-text"><strong>Set stop loss simultaneously with entry</strong> — it must be in the system before you enter, not after.</span></div>
+  </div>
+  <button class="ask-btn" onclick="sendPrompt('What are the top 5 high-probability candlestick patterns for entry signals? ↗')">Learn top candlestick entry signals ↗</button>
+</div>
+
+<!-- ══ EXIT RULES ══ -->
+<div id="exit" class="panel">
+
+  <div class="section-label">The hardest skill — knowing when to exit</div>
+  <div class="rule-block green">
+    <div class="rule-title">Core exit philosophy</div>
+    <div class="rule-body">Entries are easy. Exits make or break a trader. Most traders exit winners too early and hold losers too long — the exact opposite of what works. The goal: let winners run to target, cut losers fast at stop loss. No exceptions, no hope.</div>
+  </div>
+
+  <div class="section-label">Profit exit rules</div>
+  <div class="setup-card">
+    <div class="setup-head"><span class="setup-name">Scaled exit strategy</span><span class="pill p-green">Recommended</span></div>
+    <div class="setup-body">Never exit the full position at once. Scale out in 3 portions to maximize profit while reducing risk.</div>
+    <div class="setup-divider"></div>
+    <div class="rr-calc">
+      <div class="rr-row"><span class="rr-label">Exit 1 — 33% position</span><span class="rr-val">At 1:1 R:R target. Move SL to breakeven.</span></div>
+      <div class="rr-row"><span class="rr-label">Exit 2 — 33% position</span><span class="rr-val">At 1:2 R:R target. Trail SL behind EMA21.</span></div>
+      <div class="rr-row"><span class="rr-label">Exit 3 — 34% remaining</span><span class="rr-val">Let it run. Trail SL with ATR. Let the market take you out.</span></div>
+      <div class="rr-row"><span class="rr-label">Result</span><span class="rr-val" style="color:var(--color-text-success)">Guaranteed profit + maximum upside captured</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">When to exit immediately — non-negotiable</div>
+  <div class="checklist">
+    <div class="check"><span class="check-num n-red">!</span><span class="check-text"><strong>Stop loss is hit</strong> — exit the full position. No averaging down. No hoping. The market is telling you something.</span></div>
+    <div class="check"><span class="check-num n-red">!</span><span class="check-text"><strong>The reason for the trade is gone</strong> — if you bought a breakout and price falls back into the range, the setup is invalid. Exit.</span></div>
+    <div class="check"><span class="check-num n-red">!</span><span class="check-text"><strong>Unexpected bad news</strong> — promoter selling, accounting fraud, regulatory action. Exit first, ask questions later.</span></div>
+    <div class="check"><span class="check-num n-amber">!</span><span class="check-text"><strong>RSI reaches 78–80 on daily</strong> — stock is overextended. Book at least 50% and trail the rest.</span></div>
+    <div class="check"><span class="check-num n-amber">!</span><span class="check-text"><strong>Price hits a major resistance (52w high, all-time high)</strong> — take partial profits. Resistance is real until broken.</span></div>
+    <div class="check"><span class="check-num n-blue">6</span><span class="check-text"><strong>Major event risk in 24 hours</strong> (results, RBI, Budget) — reduce position to 50% before the event.</span></div>
+    <div class="check"><span class="check-num n-blue">7</span><span class="check-text"><strong>Trade has been stagnant for 5+ days</strong> — capital is stuck. Exit and redeploy into a better setup. Opportunity cost is real.</span></div>
+  </div>
+
+  <div class="section-label">Trailing stop methods</div>
+  <div class="grid2" style="margin-top:4px">
+    <div class="card">
+      <div class="card-head"><span class="card-name">ATR trailing stop</span><span class="pill p-teal">Best for swing</span></div>
+      <div class="card-body">Trail stop at (highest close − 2×ATR). As price moves up, stop moves up but never down. Gets you out when volatility suggests a real reversal, not just noise.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-name">EMA trailing stop</span><span class="pill p-blue">Best for trend</span></div>
+      <div class="card-body">Trail stop just below the 21 EMA on your trading timeframe. As long as price stays above EMA21, hold. First close below EMA21 = exit. Simple and very effective.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-name">Swing low trailing</span><span class="pill p-purple">Position trades</span></div>
+      <div class="card-body">Move stop to just below each new higher swing low as price trends up. Manual but very powerful — keeps you in the trade through normal pullbacks while protecting profit.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-name">Time-based exit</span><span class="pill p-amber">Intraday only</span></div>
+      <div class="card-body">For intraday: exit all positions by 3:15 PM regardless of profit/loss. For swing: if trade hasn't worked in 10 trading days, exit — the thesis may be wrong.</div>
+    </div>
+  </div>
+  <button class="ask-btn" onclick="sendPrompt('Explain how to trail a stop loss using ATR with a real example ↗')">Show me ATR trailing stop example ↗</button>
+</div>
+
+<!-- ══ RISK ══ -->
+<div id="risk" class="panel">
+
+  <div class="section-label">The only 5 numbers that matter</div>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Risk per trade</div><div class="stat-val">1%</div><div class="stat-sub">of total capital max</div></div>
+    <div class="stat"><div class="stat-label">Min R:R ratio</div><div class="stat-val">1:2</div><div class="stat-sub">ideally 1:3</div></div>
+    <div class="stat"><div class="stat-label">Monthly drawdown</div><div class="stat-val">6%</div><div class="stat-sub">stop if hit</div></div>
+    <div class="stat"><div class="stat-label">Max open trades</div><div class="stat-val">5</div><div class="stat-sub">swing at one time</div></div>
+    <div class="stat"><div class="stat-label">Max sector exposure</div><div class="stat-val">25%</div><div class="stat-sub">of portfolio</div></div>
+  </div>
+
+  <div class="section-label">Position sizing — the formula traders ignore</div>
+  <div class="setup-card">
+    <div class="setup-head"><span class="setup-name">Risk-based position sizing</span><span class="pill p-green">Non-negotiable</span></div>
+    <div class="setup-body">Never decide position size by gut feeling. Use this formula on every single trade.</div>
+    <div class="rr-calc">
+      <div class="rr-row"><span class="rr-label">Capital</span><span class="rr-val">₹10,00,000</span></div>
+      <div class="rr-row"><span class="rr-label">Risk per trade (1%)</span><span class="rr-val">₹10,000</span></div>
+      <div class="rr-row"><span class="rr-label">Entry price</span><span class="rr-val">₹500</span></div>
+      <div class="rr-row"><span class="rr-label">Stop loss price</span><span class="rr-val">₹480 (₹20 risk)</span></div>
+      <div class="rr-row"><span class="rr-label">Quantity = ₹10,000 ÷ ₹20</span><span class="rr-val" style="color:var(--color-text-success)">500 shares</span></div>
+      <div class="rr-row"><span class="rr-label">Total position value</span><span class="rr-val">₹2,50,000 (25% of capital)</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">Risk levels by strategy type</div>
+  <div class="card">
+    <div class="risk-bar-wrap">
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">ORB breakout</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:30%;background:#639922"></div></div>
+        <span class="risk-val" style="color:#27500A">Low</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">VWAP bounce</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:35%;background:#639922"></div></div>
+        <span class="risk-val" style="color:#27500A">Low</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">EMA pullback</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:30%;background:#639922"></div></div>
+        <span class="risk-val" style="color:#27500A">Low</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">Swing pullback</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:40%;background:#639922"></div></div>
+        <span class="risk-val" style="color:#27500A">Low</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">Breakout trade</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:55%;background:#BA7517"></div></div>
+        <span class="risk-val" style="color:#633806">Medium</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">F&O naked options</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:88%;background:#E24B4A"></div></div>
+        <span class="risk-val" style="color:#791F1F">Very high</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">News trading</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:80%;background:#E24B4A"></div></div>
+        <span class="risk-val" style="color:#791F1F">High</span>
+      </div>
+      <div class="risk-bar-row">
+        <span class="risk-bar-label">Penny stocks</span>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:95%;background:#E24B4A"></div></div>
+        <span class="risk-val" style="color:#791F1F">Extreme</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Risk control rules — the laws of survival</div>
+  <div class="checklist">
+    <div class="check"><span class="check-num n-red">1</span><span class="check-text"><strong>Never average down a losing trade</strong> — adding to a loss is not a strategy, it is denial. The market is already telling you that you are wrong.</span></div>
+    <div class="check"><span class="check-num n-red">2</span><span class="check-text"><strong>Never remove a stop loss</strong> — once set, it stays. If the logic changes, exit the trade. Stop losses save accounts.</span></div>
+    <div class="check"><span class="check-num n-red">3</span><span class="check-text"><strong>No leverage until you are profitable for 6 months straight</strong> — leverage amplifies mistakes before it amplifies profits.</span></div>
+    <div class="check"><span class="check-num n-amber">4</span><span class="check-text"><strong>Keep 30% cash always</strong> — markets crash and give incredible opportunities. You need dry powder to buy the dip.</span></div>
+    <div class="check"><span class="check-num n-amber">5</span><span class="check-text"><strong>Hedge before results and budget</strong> — buy a put option or reduce position by 50% before binary events.</span></div>
+    <div class="check"><span class="check-num n-blue">6</span><span class="check-text"><strong>Track every trade in a journal</strong> — entry, exit, setup type, emotion, result. Patterns in your losses will reveal your specific weakness.</span></div>
+    <div class="check"><span class="check-num n-blue">7</span><span class="check-text"><strong>Review performance weekly, not daily</strong> — daily P&L watching causes emotional decisions. Weekly review reveals if your process is working.</span></div>
+  </div>
+  <button class="ask-btn" onclick="sendPrompt('Show me how to build a trading journal template to track risk and performance ↗')">Build a trading journal template ↗</button>
+</div>
+
+<!-- ══ MINDSET ══ -->
+<div id="mindset" class="panel">
+
+  <div class="section-label">The pro trader mindset — what separates 5% from 95%</div>
+  <div class="rule-block purple">
+    <div class="rule-title">The uncomfortable truth</div>
+    <div class="rule-body">95% of traders lose money. They all know the indicators. They all have charts. The difference is not knowledge — it is psychology, discipline, and process. A trader with average knowledge and excellent discipline will outperform a brilliant analyst with poor emotional control every single time.</div>
+  </div>
+
+  <div class="section-label">Core mental laws</div>
+  <div class="grid2">
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-brain" aria-hidden="true"></i></div>
+      <div class="mindset-title">Process over outcome</div>
+      <div class="mindset-body">A losing trade can be a good trade if you followed your rules. A winning trade can be a bad trade if you broke them. Judge yourself on process, not results. Over 100 trades, good process = profits.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-chart-line" aria-hidden="true"></i></div>
+      <div class="mindset-title">Think in probabilities</div>
+      <div class="mindset-body">No single trade matters. What matters is the edge over 50–100 trades. A 55% win rate with 1:2 R:R means you make money even being wrong 45% of the time. Accept losses as part of the business.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-clock" aria-hidden="true"></i></div>
+      <div class="mindset-title">Patience is the edge</div>
+      <div class="mindset-body">The best traders make 3–5 high-quality trades per week — not 30. Waiting for A-grade setups only and skipping B and C setups is what makes the difference. Most losses come from boredom trades.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-mood-smile" aria-hidden="true"></i></div>
+      <div class="mindset-title">Detach from money</div>
+      <div class="mindset-body">Think in R-multiples, not rupees. A 1R win is a 1R win whether it is ₹1,000 or ₹1,00,000. The moment you think about what the money represents (rent, EMI, holiday), your decisions become emotional.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-refresh" aria-hidden="true"></i></div>
+      <div class="mindset-title">Every day is a clean slate</div>
+      <div class="mindset-body">Yesterday's loss is irrelevant to today's trade. Trying to recover yesterday's loss today leads to revenge trading. Each trade stands alone on its own merit.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-book" aria-hidden="true"></i></div>
+      <div class="mindset-title">Keep a trading journal</div>
+      <div class="mindset-body">Write your reason for entry, expected setup, emotion at entry, result, and what you would do differently. Review weekly. Your journal will show you patterns in your mistakes that no indicator can reveal.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-trending-up" aria-hidden="true"></i></div>
+      <div class="mindset-title">Losses are tuition</div>
+      <div class="mindset-body">Every losing trade paid for properly (with a stop loss, no overleveraging) is education. The only catastrophic loss is the one that breaks your account or your confidence so badly you quit.</div>
+    </div>
+    <div class="mindset-card">
+      <div class="mindset-icon"><i class="ti ti-eye" aria-hidden="true"></i></div>
+      <div class="mindset-title">Never trade to prove a point</div>
+      <div class="mindset-body">If you predicted a stock would fall and it rose, do not short it out of stubbornness. The market does not know or care about your opinion. Adapt or lose money.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Daily routine of a disciplined trader</div>
+  <div class="checklist">
+    <div class="check"><span class="check-num n-blue">8:30</span><span class="check-text"><strong>Pre-market scan</strong> — check SGX Nifty, global markets, news, economic calendar, FII data from previous day</span></div>
+    <div class="check"><span class="check-num n-blue">9:00</span><span class="check-text"><strong>Mark key levels</strong> — support, resistance, previous day high/low, ORB zone on watchlist stocks</span></div>
+    <div class="check"><span class="check-num n-green">9:30</span><span class="check-text"><strong>Observe, do not trade yet</strong> — watch the first 15 minutes. Let the noise settle. Read the tape.</span></div>
+    <div class="check"><span class="check-num n-green">9:45</span><span class="check-text"><strong>Take setups if they appear</strong> — only A-grade setups that match your criteria with all 3 confirmations</span></div>
+    <div class="check"><span class="check-num n-amber">3:15</span><span class="check-text"><strong>Square off all intraday</strong> — no exceptions. Begin end-of-day review.</span></div>
+    <div class="check"><span class="check-num n-amber">3:30</span><span class="check-text"><strong>Journal entry</strong> — write every trade. What worked, what did not, emotional state, and tomorrow's watchlist</span></div>
+    <div class="check"><span class="check-num n-purple">Eve</span><span class="check-text"><strong>Swing trade scan</strong> — scan for breakouts, pullbacks, and sector rotation setups for the next 3–5 days</span></div>
+  </div>
+  <button class="ask-btn" onclick="sendPrompt('Create a complete daily trading routine and pre-market checklist for me ↗')">Get my daily trading routine ↗</button>
+</div>
+
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>

@@ -1,0 +1,439 @@
+
+<style>
+:root { --gap: 12px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+
+.shell { padding: 1rem 0; }
+
+.section-title {
+  font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--color-text-secondary); margin: 1.5rem 0 0.6rem;
+  padding-bottom: 6px; border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.section-title:first-child { margin-top: 0; }
+
+.grid { display: grid; gap: var(--gap); }
+.g2 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.g3 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.g4 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+
+.card {
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-lg);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color .15s, transform .1s;
+  position: relative;
+}
+.card:hover { border-color: var(--color-border-secondary); transform: translateY(-1px); }
+.card:active { transform: scale(0.98); }
+
+.card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.dot-blue   { background: #378ADD; }
+.dot-purple { background: #7F77DD; }
+.dot-amber  { background: #EF9F27; }
+.dot-teal   { background: #1D9E75; }
+.dot-coral  { background: #D85A30; }
+.dot-pink   { background: #D4537E; }
+.dot-red    { background: #E24B4A; }
+.dot-green  { background: #639922; }
+.dot-gray   { background: #888780; }
+
+.card-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.card-tag  { font-size: 10px; font-weight: 500; letter-spacing: .5px; border-radius: 4px; padding: 1px 6px; margin-left: auto; }
+.card-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; }
+.card-signal { font-size: 11px; margin-top: 7px; color: var(--color-text-tertiary); line-height: 1.5; }
+
+.tag-buy    { background: #EAF3DE; color: #3B6D11; }
+.tag-sell   { background: #FCEBEB; color: #A32D2D; }
+.tag-watch  { background: #FAEEDA; color: #854F0B; }
+.tag-risk   { background: #FBEAF0; color: #993556; }
+.tag-trend  { background: #E6F1FB; color: #185FA5; }
+.tag-fund   { background: #EEEDFE; color: #534AB7; }
+.tag-macro  { background: #E1F5EE; color: #0F6E56; }
+
+.checklist { display: grid; gap: 8px; margin-top: 4px; }
+.check-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--color-background-primary);
+  border: 0.5px solid var(--color-border-tertiary);
+  border-radius: var(--border-radius-md);
+  padding: 10px 12px;
+  font-size: 12px; color: var(--color-text-secondary); line-height: 1.5;
+}
+.check-item .num {
+  font-size: 11px; font-weight: 500; min-width: 18px; height: 18px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.num-blue   { background: #E6F1FB; color: #185FA5; }
+.num-green  { background: #EAF3DE; color: #3B6D11; }
+.num-amber  { background: #FAEEDA; color: #854F0B; }
+.num-red    { background: #FCEBEB; color: #A32D2D; }
+.num-purple { background: #EEEDFE; color: #534AB7; }
+
+.rule-row {
+  display: flex; gap: 10px; align-items: flex-start;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  padding: 10px 0;
+}
+.rule-row:last-child { border-bottom: none; }
+.rule-icon { font-size: 18px; flex-shrink: 0; width: 28px; text-align: center; margin-top: 1px; }
+.rule-label { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.rule-desc  { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; margin-top: 2px; }
+
+.mindset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--gap); }
+.mindset-card {
+  border-radius: var(--border-radius-lg);
+  border: 0.5px solid var(--color-border-tertiary);
+  padding: 14px 16px;
+}
+.mindset-head { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+.mindset-body { font-size: 12px; color: var(--color-text-secondary); line-height: 1.55; }
+
+.entry-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.entry-table th {
+  text-align: left; padding: 7px 10px;
+  font-size: 10px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--color-text-secondary);
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  background: var(--color-background-secondary);
+}
+.entry-table td {
+  padding: 8px 10px;
+  border-bottom: 0.5px solid var(--color-border-tertiary);
+  color: var(--color-text-primary); vertical-align: top;
+}
+.entry-table tr:last-child td { border-bottom: none; }
+.entry-table tr:hover td { background: var(--color-background-secondary); }
+
+.pill {
+  display: inline-block; font-size: 10px; font-weight: 500;
+  padding: 1px 7px; border-radius: 10px; white-space: nowrap;
+}
+.pill-green  { background: #EAF3DE; color: #3B6D11; }
+.pill-red    { background: #FCEBEB; color: #A32D2D; }
+.pill-amber  { background: #FAEEDA; color: #854F0B; }
+.pill-blue   { background: #E6F1FB; color: #185FA5; }
+.pill-purple { background: #EEEDFE; color: #534AB7; }
+</style>
+
+<div class="shell">
+<h2 class="sr-only">Complete trader's guide — all indicators, rules, and mindset principles</h2>
+
+<!-- ── 1. Technical: Trend ── -->
+<div class="section-title">Trend indicators</div>
+<div class="grid g3">
+
+  <div class="card" onclick="sendPrompt('Explain SMA 50 and SMA 200 crossovers with examples')">
+    <div class="card-top"><span class="dot dot-blue"></span><span class="card-name">SMA 50 / 200</span><span class="card-tag tag-trend">Trend</span></div>
+    <div class="card-desc">The most-watched moving averages. Price above both = uptrend. Golden Cross (50 crosses above 200) is a strong buy signal.</div>
+    <div class="card-signal">📈 Buy zone: price &gt; SMA50 &gt; SMA200<br>📉 Danger: price &lt; SMA50 &lt; SMA200</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How do EMA 9 and EMA 21 work for short-term trading?')">
+    <div class="card-top"><span class="dot dot-blue"></span><span class="card-name">EMA 9 / 21</span><span class="card-tag tag-trend">Trend</span></div>
+    <div class="card-desc">Faster moving averages — react quicker to price changes. Used for short-term and intraday trades.</div>
+    <div class="card-signal">⚡ EMA9 crossing above EMA21 = momentum building</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How to use MACD for buy and sell signals?')">
+    <div class="card-top"><span class="dot dot-purple"></span><span class="card-name">MACD</span><span class="card-tag tag-trend">Trend</span></div>
+    <div class="card-desc">Shows momentum + direction. MACD line crossing above signal = buy. Histogram shrinking = momentum fading.</div>
+    <div class="card-signal">✅ Buy: MACD line &gt; signal line<br>❌ Sell: MACD line &lt; signal line</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How does ADX measure trend strength?')">
+    <div class="card-top"><span class="dot dot-purple"></span><span class="card-name">ADX</span><span class="card-tag tag-trend">Trend</span></div>
+    <div class="card-desc">Measures trend strength, not direction. Combine with +DI/-DI lines to confirm direction.</div>
+    <div class="card-signal">Strong trend: ADX &gt; 25 | Weak/sideways: &lt; 20</div>
+  </div>
+
+</div>
+
+<!-- ── 2. Momentum ── -->
+<div class="section-title">Momentum indicators</div>
+<div class="grid g4">
+
+  <div class="card" onclick="sendPrompt('Explain RSI overbought oversold zones and divergence')">
+    <div class="card-top"><span class="dot dot-amber"></span><span class="card-name">RSI</span><span class="card-tag tag-watch">Momentum</span></div>
+    <div class="card-desc">Most popular oscillator. Scale 0–100. Watch for divergence — price new high, RSI doesn't = hidden weakness.</div>
+    <div class="card-signal">Overbought: &gt;70 | Oversold: &lt;30<br>Sweet spot to buy: 40–60</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How does Stochastic oscillator work?')">
+    <div class="card-top"><span class="dot dot-amber"></span><span class="card-name">Stochastic</span><span class="card-tag tag-watch">Momentum</span></div>
+    <div class="card-desc">Compares close to recent range. Best in sideways markets. %K and %D crossovers signal turns.</div>
+    <div class="card-signal">Overbought: &gt;80 | Oversold: &lt;20</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('What is Rate of Change indicator in trading?')">
+    <div class="card-top"><span class="dot dot-amber"></span><span class="card-name">ROC</span><span class="card-tag tag-watch">Momentum</span></div>
+    <div class="card-desc">Measures how fast price is moving. Good for spotting acceleration before a breakout.</div>
+    <div class="card-signal">Rising ROC = increasing momentum</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How does the Williams %R indicator work?')">
+    <div class="card-top"><span class="dot dot-amber"></span><span class="card-name">Williams %R</span><span class="card-tag tag-watch">Momentum</span></div>
+    <div class="card-desc">Measures overbought/oversold relative to recent high. Useful for reversal timing.</div>
+    <div class="card-signal">Overbought: -20 to 0 | Oversold: -80 to -100</div>
+  </div>
+
+</div>
+
+<!-- ── 3. Volatility ── -->
+<div class="section-title">Volatility indicators</div>
+<div class="grid g3">
+
+  <div class="card" onclick="sendPrompt('Explain Bollinger Bands squeeze and breakout signals')">
+    <div class="card-top"><span class="dot dot-teal"></span><span class="card-name">Bollinger Bands</span><span class="card-tag tag-risk">Volatility</span></div>
+    <div class="card-desc">Three bands: middle SMA + upper/lower at 2 std deviations. Band squeeze = big move coming. Price touching outer band = extreme zone.</div>
+    <div class="card-signal">Band squeeze → watch for breakout direction</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How to use ATR for stop loss placement?')">
+    <div class="card-top"><span class="dot dot-teal"></span><span class="card-name">ATR</span><span class="card-tag tag-risk">Volatility</span></div>
+    <div class="card-desc">Average True Range — measures volatility, not direction. Essential for setting stop loss distance based on market conditions.</div>
+    <div class="card-signal">Stop loss = entry − (1.5 × ATR)</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('What is India VIX and how to use it for trading?')">
+    <div class="card-top"><span class="dot dot-coral"></span><span class="card-name">India VIX</span><span class="card-tag tag-risk">Volatility</span></div>
+    <div class="card-desc">Fear gauge of the market. Low VIX = calm. High VIX = panic — options are expensive, avoid fresh longs.</div>
+    <div class="card-signal">Safe: &lt;15 | Caution: 20–25 | Panic: &gt;25</div>
+  </div>
+
+</div>
+
+<!-- ── 4. Volume ── -->
+<div class="section-title">Volume indicators</div>
+<div class="grid g3">
+
+  <div class="card" onclick="sendPrompt('How to use OBV On Balance Volume in trading?')">
+    <div class="card-top"><span class="dot dot-green"></span><span class="card-name">OBV</span><span class="card-tag tag-buy">Volume</span></div>
+    <div class="card-desc">Cumulative volume tells if smart money is flowing in or out. OBV rising with price = healthy. OBV falling while price rises = distribution — danger.</div>
+    <div class="card-signal">OBV divergence = early warning signal</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How to identify volume spikes in stocks?')">
+    <div class="card-top"><span class="dot dot-green"></span><span class="card-name">Volume spike</span><span class="card-tag tag-buy">Volume</span></div>
+    <div class="card-desc">2–3× average volume = institutional activity. On a breakout = confirmation. On a reversal day = trend change.</div>
+    <div class="card-signal">No volume on breakout = false breakout risk</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('What is VWAP and how do traders use it?')">
+    <div class="card-top"><span class="dot dot-green"></span><span class="card-name">VWAP</span><span class="card-tag tag-buy">Volume</span></div>
+    <div class="card-desc">Volume Weighted Average Price — intraday benchmark. Institutions buy near VWAP. Price above = bullish intraday tone.</div>
+    <div class="card-signal">Buy near VWAP support | Sell near VWAP resistance</div>
+  </div>
+
+</div>
+
+<!-- ── 5. Fundamental ── -->
+<div class="section-title">Fundamental indicators</div>
+<div class="grid g3">
+
+  <div class="card" onclick="sendPrompt('How to analyse PE ratio for Indian stocks?')">
+    <div class="card-top"><span class="dot dot-purple"></span><span class="card-name">P/E Ratio</span><span class="card-tag tag-fund">Fundamental</span></div>
+    <div class="card-desc">Compare to sector average. Nifty 50 avg is ~20–22. Above 24 = market expensive. Low P/E could be value or a trap — check why.</div>
+    <div class="card-signal">Always compare to sector peers, not market P/E</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('What is ROE and why does Buffett use it?')">
+    <div class="card-top"><span class="dot dot-purple"></span><span class="card-name">ROE</span><span class="card-tag tag-fund">Fundamental</span></div>
+    <div class="card-desc">Return on Equity. Above 15% consistently = well-managed. Buffett looks for ROE &gt;20% for 10 consecutive years.</div>
+    <div class="card-signal">Good: &gt;15% | Excellent: &gt;20% sustained</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How does EPS growth affect stock price?')">
+    <div class="card-top"><span class="dot dot-purple"></span><span class="card-name">EPS growth</span><span class="card-tag tag-fund">Fundamental</span></div>
+    <div class="card-desc">Consistent 15–20%+ quarterly EPS growth = quality stock. Sudden EPS drop = red flag. Compare to analyst estimates.</div>
+    <div class="card-signal">Beat estimates = stock likely moves up next day</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('What is debt to equity ratio and what is safe?')">
+    <div class="card-top"><span class="dot dot-red"></span><span class="card-name">Debt / Equity</span><span class="card-tag tag-fund">Fundamental</span></div>
+    <div class="card-desc">Below 1 is generally safe. High debt + rising interest rates = dangerous. Avoid highly leveraged companies in rate hike cycles.</div>
+    <div class="card-signal">Alert: D/E &gt; 2 in rising rate environment</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('Why is promoter holding important in Indian stocks?')">
+    <div class="card-top"><span class="dot dot-red"></span><span class="card-name">Promoter holding</span><span class="card-tag tag-fund">Fundamental</span></div>
+    <div class="card-desc">Above 50% = promoters are confident. Pledged promoter shares = major red flag. Watch quarterly promoter holding changes.</div>
+    <div class="card-signal">⚠️ Pledging increasing = exit signal</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('Explain Price to Book ratio for value investing')">
+    <div class="card-top"><span class="dot dot-purple"></span><span class="card-name">P/B Ratio</span><span class="card-tag tag-fund">Fundamental</span></div>
+    <div class="card-desc">Below 1 = trading below asset value. Best for banking stocks. High P/B only acceptable with high ROE.</div>
+    <div class="card-signal">Banking stocks: P/B &lt; 1.5 = value zone</div>
+  </div>
+
+</div>
+
+<!-- ── 6. Market-wide ── -->
+<div class="section-title">Market-wide signals (India)</div>
+<div class="grid g3">
+
+  <div class="card" onclick="sendPrompt('How do FII and DII data affect Indian stock market?')">
+    <div class="card-top"><span class="dot dot-teal"></span><span class="card-name">FII / DII data</span><span class="card-tag tag-macro">Macro</span></div>
+    <div class="card-desc">Foreign Institutional buying = strong bullish signal. FII selling heavily = caution. Check daily on NSE website. DII buying can cushion FII selling.</div>
+    <div class="card-signal">FII net buy &gt; ₹2000Cr = strong market support</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('What is Put Call Ratio PCR and how to use it?')">
+    <div class="card-top"><span class="dot dot-teal"></span><span class="card-name">PCR (Put-Call)</span><span class="card-tag tag-macro">Macro</span></div>
+    <div class="card-desc">Contrarian indicator. Too many puts = market may bounce. Too many calls = market may fall. Best for Nifty/BankNifty.</div>
+    <div class="card-signal">PCR &gt; 1.2 = oversold | PCR &lt; 0.8 = overbought</div>
+  </div>
+
+  <div class="card" onclick="sendPrompt('How to track 52 week high and low for trading signals?')">
+    <div class="card-top"><span class="dot dot-amber"></span><span class="card-name">52-week high / low</span><span class="card-tag tag-macro">Macro</span></div>
+    <div class="card-desc">Near 52w high = strong resistance. Breakout above with volume = very bullish. Near 52w low = potential support or value trap.</div>
+    <div class="card-signal">Breakout above 52w high + volume = buy signal</div>
+  </div>
+
+</div>
+
+<!-- ── 7. Pre-trade checklist ── -->
+<div class="section-title">Pre-trade entry checklist — need 4+ ticked</div>
+<div class="checklist">
+  <div class="check-item"><span class="num num-blue">1</span><span>Price is <strong>above SMA 50 and SMA 200</strong> — confirms uptrend is intact</span></div>
+  <div class="check-item"><span class="num num-blue">2</span><span><strong>RSI is between 40–65</strong> — not overbought, momentum building but room to run</span></div>
+  <div class="check-item"><span class="num num-blue">3</span><span><strong>MACD line is above signal line</strong> — bullish momentum confirmed</span></div>
+  <div class="check-item"><span class="num num-green">4</span><span><strong>Volume above 20-day average</strong> on the entry candle — institutional interest present</span></div>
+  <div class="check-item"><span class="num num-green">5</span><span><strong>EPS growing 15%+ for 2+ quarters</strong> — fundamental backing for the move</span></div>
+  <div class="check-item"><span class="num num-green">6</span><span><strong>Promoter pledge is low or decreasing</strong> — insiders are not under pressure</span></div>
+  <div class="check-item"><span class="num num-amber">7</span><span><strong>VIX is below 18</strong> — market is calm enough for positional trades</span></div>
+  <div class="check-item"><span class="num num-amber">8</span><span><strong>FII is net buying</strong> that week — foreign money flowing into the market</span></div>
+  <div class="check-item"><span class="num num-purple">9</span><span><strong>Stock near sector high-relative strength</strong> — outperforming its own sector is a strong signal</span></div>
+  <div class="check-item"><span class="num num-red">10</span><span><strong>Risk:Reward is at least 1:2</strong> — potential gain is 2× the stop loss distance before entering</span></div>
+</div>
+
+<!-- ── 8. Risk & position sizing ── -->
+<div class="section-title">Risk management rules every trader must follow</div>
+<div style="border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden;">
+  <div class="rule-row" style="padding: 10px 14px;" onclick="sendPrompt('How to calculate position size using the 1% rule?')" >
+    <div class="rule-icon"><i class="ti ti-shield" aria-hidden="true" style="color:#D85A30;font-size:18px"></i></div>
+    <div><div class="rule-label">1% capital risk per trade</div><div class="rule-desc">Never risk more than 1% of total capital on a single trade. On a ₹10L portfolio, max loss per trade = ₹10,000. This keeps you alive through 10 consecutive losses.</div></div>
+  </div>
+  <div class="rule-row" style="padding: 10px 14px;" onclick="sendPrompt('How to set a stop loss properly?')">
+    <div class="rule-icon"><i class="ti ti-cut" aria-hidden="true" style="color:#E24B4A;font-size:18px"></i></div>
+    <div><div class="rule-label">Always set stop loss before entry</div><div class="rule-desc">Decide stop loss BEFORE entering — not after. Use ATR-based stops (entry − 1.5×ATR) or below the nearest support. Never move stop loss down to avoid a loss.</div></div>
+  </div>
+  <div class="rule-row" style="padding: 10px 14px;" onclick="sendPrompt('What is the golden rule of risk reward ratio?')">
+    <div class="rule-icon"><i class="ti ti-scale" aria-hidden="true" style="color:#EF9F27;font-size:18px"></i></div>
+    <div><div class="rule-label">Minimum 1:2 risk-to-reward ratio</div><div class="rule-desc">If your stop is ₹20, your target must be at least ₹40. With a 50% win rate and 1:2 R:R you're still profitable. Many traders ignore this — most losing traders do.</div></div>
+  </div>
+  <div class="rule-row" style="padding: 10px 14px;" onclick="sendPrompt('What is maximum portfolio drawdown limit?')">
+    <div class="rule-icon"><i class="ti ti-trending-down" aria-hidden="true" style="color:#D85A30;font-size:18px"></i></div>
+    <div><div class="rule-label">Max 6% portfolio drawdown rule</div><div class="rule-desc">If portfolio is down 6% in a month — stop trading for the rest of the month. Review all open trades. This protects from emotional revenge trading spirals.</div></div>
+  </div>
+  <div class="rule-row" style="padding: 10px 14px; border-bottom: none;" onclick="sendPrompt('How to diversify a stock portfolio properly?')">
+    <div class="rule-icon"><i class="ti ti-layout-grid" aria-hidden="true" style="color:#1D9E75;font-size:18px"></i></div>
+    <div><div class="rule-label">Max 10–15% in one stock, 25% in one sector</div><div class="rule-desc">Concentration risk kills portfolios silently. Even if you're very confident — cap single-stock exposure. One accounting scandal can wipe 50–80% overnight.</div></div>
+  </div>
+</div>
+
+<!-- ── 9. What else a trader must know ── -->
+<div class="section-title">What else a trader must know</div>
+<div class="mindset-grid">
+
+  <div class="mindset-card" style="border-left: 2px solid #378ADD;">
+    <div class="mindset-head"><i class="ti ti-clock" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#378ADD"></i>Market timings</div>
+    <div class="mindset-body">Pre-open: 9:00–9:15 AM. Market: 9:15 AM–3:30 PM. First 30 min and last 30 min are most volatile — avoid inexperienced trades then. F&O expiry: last Thursday of the month.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #7F77DD;">
+    <div class="mindset-head"><i class="ti ti-book" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#7F77DD"></i>Order types</div>
+    <div class="mindset-body">Market order fills instantly at any price. Limit order fills only at your price. SL-M order = stop loss market. Always use limit orders for large quantities to avoid slippage eating your profit.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #EF9F27;">
+    <div class="mindset-head"><i class="ti ti-receipt" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#EF9F27"></i>Taxes &amp; costs</div>
+    <div class="mindset-body">Short-term gains (held &lt;1yr) taxed at 20% in India. Long-term gains &gt;₹1.25L taxed at 12.5%. STT, brokerage, GST, stamp duty add up — calculate all costs before a trade is worth taking.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #D85A30;">
+    <div class="mindset-head"><i class="ti ti-calendar-event" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#D85A30"></i>Events calendar</div>
+    <div class="mindset-body">RBI policy dates, quarterly results, Union Budget, US Fed meetings — all cause major moves. Never hold large positions before these without a hedge. Check the economic calendar weekly.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #1D9E75;">
+    <div class="mindset-head"><i class="ti ti-brain" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#1D9E75"></i>Trading psychology</div>
+    <div class="mindset-body">Fear and greed are the two enemies. Keep a trading journal — write reason for entry, exit, and emotion at the time. Most losses come from not following your own rules, not from wrong analysis.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #D4537E;">
+    <div class="mindset-head"><i class="ti ti-chart-candle" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#D4537E"></i>Candlestick patterns</div>
+    <div class="mindset-body">Doji = indecision. Hammer = reversal from bottom. Shooting star = reversal from top. Engulfing = strong reversal. Always confirm with volume. Patterns on weekly charts are more reliable than daily.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #639922;">
+    <div class="mindset-head"><i class="ti ti-building-bank" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#639922"></i>Support &amp; resistance</div>
+    <div class="mindset-body">S/R are price levels where buyers and sellers repeatedly clash. Round numbers (₹500, ₹1000, ₹2000) are strong psychological levels. Previous all-time highs become resistance. Previous highs become support after a breakout.</div>
+  </div>
+
+  <div class="mindset-card" style="border-left: 2px solid #888780;">
+    <div class="mindset-head"><i class="ti ti-news" aria-hidden="true" style="font-size:15px;margin-right:5px;color:#888780"></i>Macro awareness</div>
+    <div class="mindset-body">Crude oil affects inflation and transport stocks. Dollar-rupee affects IT exporters and import-heavy sectors. Interest rate cuts = good for banks and real estate. Always know the macro backdrop of your trade.</div>
+  </div>
+
+</div>
+
+<!-- ── 10. Scenario table ── -->
+<div class="section-title">Quick-reference: what to check per situation</div>
+<table class="entry-table">
+  <thead>
+    <tr><th>Situation</th><th>Primary indicators</th><th>Signal to look for</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Is trend up or down?</td>
+      <td><span class="pill pill-blue">SMA 50/200</span> <span class="pill pill-blue">EMA</span> <span class="pill pill-blue">MACD</span></td>
+      <td>Price above both MAs, MACD positive</td>
+    </tr>
+    <tr>
+      <td>Is it safe to buy now?</td>
+      <td><span class="pill pill-amber">RSI</span> <span class="pill pill-amber">Stochastic</span> <span class="pill pill-amber">Bollinger</span></td>
+      <td>RSI 40–60, price near lower band</td>
+    </tr>
+    <tr>
+      <td>Is the move strong?</td>
+      <td><span class="pill pill-green">ADX</span> <span class="pill pill-green">Volume</span> <span class="pill pill-green">OBV</span></td>
+      <td>ADX &gt; 25, volume above average</td>
+    </tr>
+    <tr>
+      <td>Where to put stop loss?</td>
+      <td><span class="pill pill-red">ATR</span> <span class="pill pill-red">Support level</span></td>
+      <td>Entry − 1.5×ATR or below nearest support</td>
+    </tr>
+    <tr>
+      <td>Is stock fundamentally good?</td>
+      <td><span class="pill pill-purple">P/E</span> <span class="pill pill-purple">ROE</span> <span class="pill pill-purple">EPS growth</span> <span class="pill pill-purple">D/E</span></td>
+      <td>ROE &gt;15%, EPS growing, D/E &lt;1</td>
+    </tr>
+    <tr>
+      <td>Is the overall market safe?</td>
+      <td><span class="pill pill-amber">VIX</span> <span class="pill pill-green">FII/DII</span> <span class="pill pill-amber">PCR</span> <span class="pill pill-blue">Nifty trend</span></td>
+      <td>VIX &lt;18, FII buying, Nifty above SMA200</td>
+    </tr>
+    <tr>
+      <td>Should I book profit now?</td>
+      <td><span class="pill pill-red">RSI</span> <span class="pill pill-red">52w high</span> <span class="pill pill-red">OBV divergence</span></td>
+      <td>RSI &gt;75, near 52w high, OBV falling</td>
+    </tr>
+    <tr>
+      <td>Is a big move coming?</td>
+      <td><span class="pill pill-blue">Bollinger squeeze</span> <span class="pill pill-blue">ADX rising</span> <span class="pill pill-green">Volume spike</span></td>
+      <td>Bands contracting + ADX rising from low base</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
