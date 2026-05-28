@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Pro Trader Backtester</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ═══════════════════ RESET & TOKENS ═══════════════════ */
+:root{
+  --bg:#07090d; --bg2:#0d1117; --bg3:#111820;
+  --border:#1c2a3a; --border2:#243447;
+  --accent:#2f80ed; --accent-lo:rgba(47,128,237,.12);
+  --green:#27ae60; --green-lo:rgba(39,174,96,.12);
+  --red:#e74c3c;   --red-lo:rgba(231,76,60,.12);
+  --amber:#f39c12; --amber-lo:rgba(243,156,18,.12);
+  --text:#cdd9e5; --text2:#7a8fa6; --text3:#3d5166;
+  --white:#fff;
+  --fh:'Syne',sans-serif; --fm:'DM Mono',monospace;
+  --r:6px; --r2:10px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--fm);font-size:13px;line-height:1.6;min-height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ═══════════════════ TOPBAR ═══════════════════ */
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 24px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.topbar::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.brand{font-family:var(--fh);font-weight:800;font-size:17px;letter-spacing:-.5px;color:var(--white)}
+.brand span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:16px;font-size:11px;color:var(--text2)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px;animation:blink 2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ═══════════════════ SHELL ═══════════════════ */
+.shell{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 52px)}
+
+/* ═══════════════════ SIDEBAR ═══════════════════ */
+.sidebar{
+  background:var(--bg2);border-right:1px solid var(--border);
+  padding:16px 14px;overflow-y:auto;
+  height:calc(100vh - 52px);position:sticky;top:52px;
+}
+.sec-head{
+  font-family:var(--fh);font-size:9px;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;color:var(--text3);
+  padding-bottom:7px;border-bottom:1px solid var(--border);margin-bottom:10px;margin-top:16px;
+}
+.sec-head:first-child{margin-top:0}
+.field{margin-bottom:10px}
+.field-label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text2);margin-bottom:4px}
+.fv{font-weight:500;color:var(--accent);font-size:11px}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg2)}
+select,input[type=number]{
+  width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  font-family:var(--fm);font-size:12px;padding:6px 9px;border-radius:var(--r);outline:none;
+  -webkit-appearance:none;transition:border-color .15s
+}
+select:focus,input[type=number]:focus{border-color:var(--accent)}
+.chk-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;cursor:pointer;font-size:12px;color:var(--text2)}
+.chk-row input[type=checkbox]{width:13px;height:13px;accent-color:var(--accent);cursor:pointer}
+.run-btn{
+  width:100%;padding:11px;background:var(--accent);color:var(--white);
+  font-family:var(--fh);font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;
+  border:none;border-radius:var(--r);cursor:pointer;margin-top:6px;
+  transition:opacity .15s,transform .1s;
+}
+.run-btn:hover{opacity:.88;transform:translateY(-1px)}
+.run-btn:active{transform:scale(.99)}
+
+/* ═══════════════════ MAIN ═══════════════════ */
+.main{padding:22px 24px;background:var(--bg);overflow-y:auto}
+
+/* ═══════════════════ TABS ═══════════════════ */
+.tabs{display:flex;gap:2px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:4px;margin-bottom:22px;width:fit-content}
+.tab{
+  padding:7px 16px;border-radius:var(--r);
+  font-family:var(--fh);font-size:12px;font-weight:600;letter-spacing:.4px;
+  color:var(--text2);cursor:pointer;border:none;background:transparent;transition:all .15s
+}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--accent);color:var(--white)}
+
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+
+/* ═══════════════════ CARDS ═══════════════════ */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:9px;margin-bottom:18px}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc.g::before{background:var(--green)}.mc.r::before{background:var(--red)}
+.mc.a::before{background:var(--amber)}.mc.b::before{background:var(--accent)}.mc.n::before{background:var(--border2)}
+.ml{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:5px}
+.mv{font-family:var(--fh);font-weight:700;font-size:22px;letter-spacing:-1px;line-height:1;margin-bottom:3px}
+.mv.g{color:var(--green)}.mv.r{color:var(--red)}.mv.a{color:var(--amber)}.mv.b{color:var(--accent)}.mv.w{color:var(--white)}
+.ms{font-size:10px;color:var(--text2)}
+
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px 18px;margin-bottom:14px}
+.ct{font-family:var(--fh);font-size:11px;font-weight:600;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.cw{position:relative}
+.crow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+
+/* ═══════════════════ TABLE ═══════════════════ */
+.tbl-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.tbl-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
+.tbl-title{font-family:var(--fh);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2)}
+.tbl-badge{font-size:10px;color:var(--text3);background:var(--bg3);padding:2px 9px;border-radius:20px;border:1px solid var(--border)}
+.dtable{width:100%;border-collapse:collapse}
+.dtable th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:8px 12px;text-align:left;background:var(--bg3);border-bottom:1px solid var(--border);white-space:nowrap}
+.dtable td{padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--text);white-space:nowrap}
+.dtable tr:last-child td{border-bottom:none}
+.dtable tr:hover td{background:var(--bg3)}
+.cr{text-align:right}
+
+/* ═══════════════════ BADGES ═══════════════════ */
+.bdg{display:inline-block;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:3px}
+.bdg-buy{background:var(--accent-lo);color:var(--accent);border:1px solid var(--accent)}
+.bdg-win{background:var(--green-lo);color:var(--green);border:1px solid var(--green)}
+.bdg-loss{background:var(--red-lo);color:var(--red);border:1px solid var(--red)}
+.bdg-exit{background:var(--amber-lo);color:var(--amber);border:1px solid var(--amber)}
+.pos{color:var(--green)}.neg{color:var(--red)}.neu{color:var(--text2)}
+
+/* ═══════════════════ LOG ═══════════════════ */
+.log-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-top:14px}
+.log-hdr{padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2)}
+.log-body{max-height:280px;overflow-y:auto}
+.log-row{display:flex;align-items:flex-start;gap:9px;padding:7px 14px;border-bottom:1px solid var(--border);font-size:11px}
+.log-row:last-child{border-bottom:none}
+.log-day{color:var(--text3);min-width:36px;flex-shrink:0;font-size:10px;padding-top:1px}
+.log-msg{color:var(--text);flex:1;line-height:1.4}
+
+/* ═══════════════════ RULES ═══════════════════ */
+.rule-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:9px;margin-bottom:14px}
+.rule-card{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;padding:11px 13px}
+.rule-card.g{border-left-color:var(--green)}.rule-card.r{border-left-color:var(--red)}.rule-card.a{border-left-color:var(--amber)}
+.rn{font-family:var(--fh);font-weight:700;font-size:12px;color:var(--white);margin-bottom:2px}
+.rd{font-size:11px;color:var(--text2);line-height:1.5}
+.rv{font-size:11px;color:var(--accent);margin-top:3px;font-weight:500}
+
+/* ═══════════════════ WELCOME / EMPTY ═══════════════════ */
+.welcome{border:1px dashed var(--border2);border-radius:var(--r2);padding:32px;text-align:center;margin-bottom:20px}
+.welcome h2{font-family:var(--fh);font-size:20px;font-weight:800;color:var(--white);margin-bottom:7px}
+.welcome p{font-size:12px;color:var(--text2);max-width:500px;margin:0 auto 18px;line-height:1.7}
+.wsteps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;text-align:left;margin-top:18px}
+.ws{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px}
+.ws-n{font-family:var(--fh);font-size:10px;font-weight:800;color:var(--accent);letter-spacing:1px;margin-bottom:3px}
+.ws-t{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.ws-d{font-size:11px;color:var(--text2);line-height:1.5}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 20px;color:var(--text3);text-align:center;gap:10px}
+.empty h3{font-family:var(--fh);font-size:14px;color:var(--text2)}
+.empty p{font-size:12px;max-width:300px}
+
+.how-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+.how-card h4{font-family:var(--fh);font-size:12px;color:var(--white);margin-bottom:4px;font-weight:600}
+.how-card p{font-size:11px;color:var(--text2);line-height:1.6}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px;margin-top:10px}
+.how-sec{margin-bottom:18px}
+.how-sec h3{font-family:var(--fh);font-size:13px;font-weight:700;color:var(--accent);margin-bottom:7px}
+.how-sec p{font-size:12px;color:var(--text2);line-height:1.7}
+
+@media(max-width:860px){.shell{grid-template-columns:1fr}.sidebar{height:auto;position:static}.crow{grid-template-columns:1fr}}
+@media(max-width:560px){.main{padding:14px}.metric-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Pro<span>Trader</span> Backtester</div>
+  <div class="topbar-right">
+    <span><span class="dot"></span>Engine ready</span>
+    <span id="status-txt">Configure → Run</span>
+  </div>
+</header>
+
+<div class="shell">
+
+<!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+<aside class="sidebar">
+
+  <div class="sec-head">Strategy</div>
+  <div class="field">
+    <div class="field-label">Which strategy to test</div>
+    <select id="strategy">
+      <option value="ema_pullback">EMA Pullback — price retests SMA21 in uptrend, bounces</option>
+      <option value="orb">ORB — Opening Range Breakout above first 30-min high</option>
+      <option value="vwap_bounce">VWAP Bounce — price touches VWAP and recovers above it</option>
+      <option value="squeeze">Bollinger Squeeze — band width at 6-month low then breaks out</option>
+      <option value="order_block">Order Block — price returns to last red candle before big up-move</option>
+      <option value="bear_trap">Bear Trap — price breaks support, reverses back above it</option>
+      <option value="post_earnings">Post-Earnings Drift — buy 2 days after a strong earnings beat</option>
+      <option value="sector_catchup">Sector Catch-Up — lagging stock in strong sector</option>
+      <option value="combined">Combined — all signals together (most selective)</option>
+    </select>
+  </div>
+  <div class="field">
+    <div class="field-label">Trade type (holding period)</div>
+    <select id="trade_type">
+      <option value="swing">Swing trade — hold 3 to 15 days</option>
+      <option value="intraday">Intraday — square off same day</option>
+      <option value="positional">Positional — hold weeks to months</option>
+    </select>
+  </div>
+  <div class="field">
+    <div class="field-label">Simulated market condition</div>
+    <select id="mkt_cond">
+      <option value="bull">Bull market — steady uptrend, low volatility</option>
+      <option value="sideways">Sideways — range-bound, no clear trend</option>
+      <option value="bear">Bear market — downtrend, high volatility</option>
+      <option value="volatile">High volatility — big swings both ways</option>
+      <option value="random">Random mixed — realistic real-world blend</option>
+    </select>
+  </div>
+
+  <div class="sec-head">Capital &amp; Risk</div>
+  <div class="field">
+    <div class="field-label">Starting capital (₹)</div>
+    <input type="number" id="capital" value="500000" step="50000"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Risk per trade</span><span class="fv" id="fv_risk">1%</span></div>
+    <input type="range" id="risk_pct" min="0.25" max="5" step="0.25" value="1" oninput="fv('fv_risk',this.value+'%')"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Stop loss (ATR ×)</span><span class="fv" id="fv_atr">1.5×</span></div>
+    <input type="range" id="atr_mult" min="0.5" max="4" step="0.25" value="1.5" oninput="fv('fv_atr',this.value+'×')"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Risk:Reward target</span><span class="fv" id="fv_rr">1:2</span></div>
+    <input type="range" id="rr" min="1" max="5" step="0.25" value="2" oninput="fv('fv_rr','1:'+this.value)"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Monthly drawdown limit</span><span class="fv" id="fv_dd">6%</span></div>
+    <input type="range" id="max_dd" min="2" max="25" step="1" value="6" oninput="fv('fv_dd',this.value+'%')"/>
+  </div>
+  <div class="field">
+    <div class="field-label">Brokerage per trade (₹)</div>
+    <input type="number" id="brokerage" value="20" step="5"/>
+  </div>
+
+  <div class="sec-head">Signal Filters</div>
+  <div class="field">
+    <div class="field-label"><span>RSI min for entry</span><span class="fv" id="fv_rsi_min">40</span></div>
+    <input type="range" id="rsi_min" min="20" max="60" step="1" value="40" oninput="fv('fv_rsi_min',this.value)"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>RSI max for entry</span><span class="fv" id="fv_rsi_max">65</span></div>
+    <input type="range" id="rsi_max" min="55" max="85" step="1" value="65" oninput="fv('fv_rsi_max',this.value)"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>ADX minimum (trend strength)</span><span class="fv" id="fv_adx">25</span></div>
+    <input type="range" id="adx_min" min="10" max="50" step="1" value="25" oninput="fv('fv_adx',this.value)"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Min volume ratio</span><span class="fv" id="fv_vol">1.2×</span></div>
+    <input type="range" id="vol_min" min="0.5" max="3" step="0.1" value="1.2" oninput="fv('fv_vol',parseFloat(this.value).toFixed(1)+'×')"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Min confirmations needed</span><span class="fv" id="fv_conf">3</span></div>
+    <input type="range" id="confirms" min="1" max="5" step="1" value="3" oninput="fv('fv_conf',this.value)"/>
+  </div>
+
+  <div class="sec-head">Exit Rules</div>
+  <div class="field">
+    <div class="field-label"><span>Exit 1 qty (at 1R profit)</span><span class="fv" id="fv_e1">33%</span></div>
+    <input type="range" id="exit1" min="10" max="70" step="5" value="33" oninput="fv('fv_e1',this.value+'%')"/>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Exit 2 qty (at 2R profit)</span><span class="fv" id="fv_e2">33%</span></div>
+    <input type="range" id="exit2" min="10" max="70" step="5" value="33" oninput="fv('fv_e2',this.value+'%')"/>
+  </div>
+  <div class="field">
+    <div class="field-label">Trailing stop method</div>
+    <select id="trail_type">
+      <option value="atr">ATR trailing (2×) — adapts to volatility</option>
+      <option value="ema21">EMA21 trailing — exits when price closes below EMA21</option>
+      <option value="swing">Swing low trailing — follows each new higher low</option>
+      <option value="none">Fixed target only — no trailing, exits at T2</option>
+    </select>
+  </div>
+  <div class="field">
+    <div class="field-label"><span>Max holding days</span><span class="fv" id="fv_hold">15</span></div>
+    <input type="range" id="max_hold" min="1" max="90" step="1" value="15" oninput="fv('fv_hold',this.value)"/>
+  </div>
+
+  <div class="sec-head">Simulation Settings</div>
+  <div class="field">
+    <div class="field-label"><span>Trading days to simulate</span><span class="fv" id="fv_days">365</span></div>
+    <input type="range" id="candles" min="100" max="1500" step="25" value="365" oninput="fv('fv_days',this.value)"/>
+  </div>
+  <div class="field">
+    <div class="field-label">Slippage per trade (basis pts)</div>
+    <input type="number" id="slippage" value="5" step="1" min="0" max="100"/>
+  </div>
+  <label class="chk-row"><input type="checkbox" id="chk_vix" checked/> Skip trades when VIX > 20</label>
+  <label class="chk-row"><input type="checkbox" id="chk_fii" checked/> Reduce size on FII sell days</label>
+  <label class="chk-row"><input type="checkbox" id="chk_tax"/> Apply 20% STCG tax on profits</label>
+
+  <button class="run-btn" id="run-btn" onclick="runBacktest()">▶ Run Backtest</button>
+
+</aside>
+
+<!-- ══ MAIN ══════════════════════════════════════════════════ -->
+<main class="main">
+
+  <div class="tabs" id="tab-bar">
+    <button class="tab active" data-tab="how">How it works</button>
+    <button class="tab" data-tab="results">Results</button>
+    <button class="tab" data-tab="trades">Trade log</button>
+    <button class="tab" data-tab="breakdown">Breakdown</button>
+    <button class="tab" data-tab="optimise">Optimise</button>
+  </div>
+
+  <!-- HOW IT WORKS ─────────────────────────────────────── -->
+  <div class="panel active" id="panel-how">
+    <div class="welcome">
+      <h2>Pro Trader Backtester</h2>
+      <p>This engine simulates the exact rules from the Pro Trader Playbook against synthetic price data. Every strategy, every indicator, every exit rule — all running together so you can see what works before risking real money.</p>
+      <div class="wsteps">
+        <div class="ws"><div class="ws-n">STEP 1</div><div class="ws-t">Choose a strategy</div><div class="ws-d">Pick one of the 9 strategies. Each has specific entry logic based on the playbook.</div></div>
+        <div class="ws"><div class="ws-n">STEP 2</div><div class="ws-t">Set your risk</div><div class="ws-d">Risk % per trade, ATR stop multiplier, and R:R target define your position sizing.</div></div>
+        <div class="ws"><div class="ws-n">STEP 3</div><div class="ws-t">Set signal filters</div><div class="ws-d">RSI zone, ADX minimum, volume ratio, and minimum confirmations control entry quality.</div></div>
+        <div class="ws"><div class="ws-n">STEP 4</div><div class="ws-t">Click Run Backtest</div><div class="ws-d">The engine simulates every trading day. Results, trade log, and charts appear instantly.</div></div>
+        <div class="ws"><div class="ws-n">STEP 5</div><div class="ws-t">Use Optimise tab</div><div class="ws-d">Sweep parameters to find the best risk %, R:R, and stop distance for your strategy.</div></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="how-sec">
+        <h3>What each strategy tests</h3>
+        <div class="how-grid">
+          <div class="how-card"><h4>EMA Pullback</h4><p>Stock in uptrend (above SMA50 + SMA200). Price pulls back to SMA21. RSI cools to 40–60. First close back above SMA21 with volume = entry. Classic trend-continuation play.</p></div>
+          <div class="how-card"><h4>ORB — Opening Range Breakout</h4><p>Marks the high and low of the first 30 min after open. Waits for a candle to close above the high with 1.5× average volume. Most powerful on gap-up days with Nifty also trending up.</p></div>
+          <div class="how-card"><h4>VWAP Bounce</h4><p>Price touches VWAP from above (a healthy pullback in an uptrend) then closes back above it with expanding volume. Best used between 10 AM and 1:30 PM.</p></div>
+          <div class="how-card"><h4>Bollinger Squeeze</h4><p>Bollinger Band width reaches its 6-month narrowest point (energy stored). 3+ inside bars visible. A breakout above the range with 2× average volume triggers the entry.</p></div>
+          <div class="how-card"><h4>Order Block Entry</h4><p>Finds the last red daily candle before a strong 3%+ up-move. When price returns to that candle's body zone, it dips briefly below (liquidity grab) then recovers. That recovery is the entry.</p></div>
+          <div class="how-card"><h4>Bear Trap (Failed Breakdown)</h4><p>Price breaks below a major support level that held 3+ times. Retail panic-sells. But within 1–2 candles price closes back above the level. All sellers are now trapped. Entry on recovery.</p></div>
+          <div class="how-card"><h4>Post-Earnings Drift</h4><p>After a strong earnings beat (EPS +10%, revenue beat, guidance raised), waits 2–3 days for initial sellers to exit. Buys the first close above 9-EMA with rising volume. Rides institutional upgrades.</p></div>
+          <div class="how-card"><h4>Sector Catch-Up</h4><p>Sector has moved 5%+ driven by FII buying. One quality stock in the sector has barely moved (1–2%). When that stock closes above SMA21 with volume, it should catch up to its peers.</p></div>
+        </div>
+      </div>
+
+      <div class="how-sec">
+        <h3>Position sizing — the exact formula</h3>
+        <p>Every trade uses risk-based sizing. The same risk % is applied regardless of the stock's price level or volatility. ATR adjusts the stop automatically.</p>
+        <div class="how-grid">
+          <div class="how-card"><h4>Risk amount</h4><p>Capital × Risk% = maximum loss on this trade. E.g. ₹5,00,000 × 1% = ₹5,000 max risk.</p></div>
+          <div class="how-card"><h4>Stop distance</h4><p>ATR(14) × ATR multiplier = distance from entry to stop in rupees. E.g. ₹18 × 1.5 = ₹27 stop.</p></div>
+          <div class="how-card"><h4>Quantity</h4><p>Risk Amount ÷ Stop Distance = shares to buy. E.g. ₹5,000 ÷ ₹27 = 185 shares. Never guessed.</p></div>
+          <div class="how-card"><h4>Three targets</h4><p>T1 = Entry + (Stop × R:R × 0.6). T2 = Entry + (Stop × R:R). T3 = trailed until stopped.</p></div>
+        </div>
+      </div>
+
+      <div class="how-sec">
+        <h3>What the metrics mean</h3>
+        <div class="how-grid">
+          <div class="how-card"><h4>Profit Factor</h4><p>Total gross profit ÷ Total gross loss. Above 1.5 = good system. Above 2.0 = excellent. Below 1.0 = losing money overall.</p></div>
+          <div class="how-card"><h4>Expectancy</h4><p>(Win rate × Avg win%) − (Loss rate × Avg loss%). If positive, the system makes money over many trades regardless of any single outcome.</p></div>
+          <div class="how-card"><h4>Sharpe ratio</h4><p>Return relative to risk taken. Above 1.0 = good. Below 0.5 = too much risk for the return. Estimated here as return / (max drawdown × √trades).</p></div>
+          <div class="how-card"><h4>Max drawdown</h4><p>The worst peak-to-trough equity drop during the test period. Keep this below 15%. If it breaches the monthly limit you set, the engine stops trading for that month.</p></div>
+        </div>
+      </div>
+
+      <div class="how-sec" style="margin-bottom:0">
+        <h3>Important — what this does NOT test</h3>
+        <div class="how-grid">
+          <div class="how-card"><h4>Not a specific stock</h4><p>Data is synthetic. It has realistic volatility and trend but is not RELIANCE, INFY, or any NSE stock. Use this to validate strategy logic, not to predict a specific stock.</p></div>
+          <div class="how-card"><h4>Not real market microstructure</h4><p>Real NSE has circuit breakers, gaps on news, illiquid bid-ask spreads, and block deal impacts that this simulation cannot replicate.</p></div>
+          <div class="how-card"><h4>What to do next</h4><p>Once your strategy logic shows Profit Factor above 1.5 and positive expectancy here, move to Level 2: test on real historical NSE data using Python + yfinance.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS ──────────────────────────────────────────── -->
+  <div class="panel" id="panel-results">
+    <div id="results-content">
+      <div class="empty"><div style="font-size:36px">📊</div><h3>No results yet</h3><p>Configure your strategy on the left and click Run Backtest.</p></div>
+    </div>
+  </div>
+
+  <!-- TRADE LOG ────────────────────────────────────────── -->
+  <div class="panel" id="panel-trades">
+    <div id="trades-content">
+      <div class="empty"><div style="font-size:36px">📋</div><h3>No trades yet</h3><p>Run a backtest to see every trade in detail.</p></div>
+    </div>
+  </div>
+
+  <!-- BREAKDOWN ────────────────────────────────────────── -->
+  <div class="panel" id="panel-breakdown">
+    <div id="breakdown-content">
+      <div class="empty"><div style="font-size:36px">🔬</div><h3>Run a backtest first</h3><p>Strategy breakdown and signal analysis appears here.</p></div>
+    </div>
+  </div>
+
+  <!-- OPTIMISE ─────────────────────────────────────────── -->
+  <div class="panel" id="panel-optimise">
+    <div class="welcome" style="margin-bottom:16px">
+      <h2>Parameter Optimisation</h2>
+      <p>Sweep one parameter at a time across a range. Each button runs multiple backtests and plots the result so you can find the optimal value for your strategy and market condition.</p>
+    </div>
+    <div class="crow">
+      <div class="chart-card">
+        <div class="ct">Risk % vs Total Return + Drawdown</div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Sweeps risk from 0.25% to 3%. Shows where return peaks before drawdown becomes dangerous. Your ideal risk sits just before the drawdown accelerates.</p>
+        <button class="run-btn" style="font-size:11px;padding:8px" onclick="runOpt('risk')">Run risk sweep</button>
+        <div class="cw" style="height:170px;margin-top:12px"><canvas id="opt-risk"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="ct">R:R Target vs Win Rate + Return</div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Sweeps R:R from 1:1 to 1:5. Higher targets mean fewer wins but bigger ones. Find the cross-over where expectancy is highest.</p>
+        <button class="run-btn" style="font-size:11px;padding:8px" onclick="runOpt('rr')">Run R:R sweep</button>
+        <div class="cw" style="height:170px;margin-top:12px"><canvas id="opt-rr"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="ct">Min Confirmations vs Trade Count + Return</div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Sweeps confirmations from 1 to 5. More confirmations = fewer but higher-quality trades. Shows the quality-vs-quantity trade-off.</p>
+        <button class="run-btn" style="font-size:11px;padding:8px" onclick="runOpt('conf')">Run confirmation sweep</button>
+        <div class="cw" style="height:170px;margin-top:12px"><canvas id="opt-conf"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="ct">ATR Multiplier vs Return + Drawdown</div>
+        <p style="font-size:11px;color:var(--text2);margin-bottom:12px">Sweeps ATR stop multiplier from 0.5× to 3×. Tighter stops = more losers but smaller losses. Find where return and drawdown balance.</p>
+        <button class="run-btn" style="font-size:11px;padding:8px" onclick="runOpt('atr')">Run ATR sweep</button>
+        <div class="cw" style="height:170px;margin-top:12px"><canvas id="opt-atr"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ══ ENGINE ══════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ── Tab switching (no event.target hack) ── */
+document.getElementById('tab-bar').addEventListener('click', function(e) {
+  var btn = e.target.closest('.tab');
+  if (!btn) return;
+  var name = btn.getAttribute('data-tab');
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+});
+
+function switchToTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  var btn = document.querySelector('.tab[data-tab="' + name + '"]');
+  if (btn) btn.classList.add('active');
+  var pnl = document.getElementById('panel-' + name);
+  if (pnl) pnl.classList.add('active');
+}
+
+/* ── Field value display ── */
+function fv(id, val) { document.getElementById(id).textContent = val; }
+function g(id) { return document.getElementById(id); }
+function gv(id) { return parseFloat(g(id).value) || 0; }
+function gi(id) { return parseInt(g(id).value) || 0; }
+
+/* ── Chart registry ── */
+var CH = {};
+function dChart(k) { if (CH[k]) { CH[k].destroy(); delete CH[k]; } }
+
+/* ════════════════════════════════════════════
+   INDICATOR CALCULATIONS
+════════════════════════════════════════════ */
+function calcSMA(a, n) {
+  return a.map(function(_, i) {
+    if (i < n - 1) return null;
+    var s = 0; for (var j = i - n + 1; j <= i; j++) s += a[j];
+    return s / n;
+  });
+}
+function calcEMA(a, n) {
+  var k = 2 / (n + 1), e = a.slice();
+  for (var i = 1; i < a.length; i++) e[i] = a[i] * k + e[i-1] * (1 - k);
+  return e;
+}
+function calcRSI(a, n) {
+  n = n || 14;
+  return a.map(function(_, i) {
+    if (i < n) return 50;
+    var g = 0, l = 0;
+    for (var j = i - n + 1; j <= i; j++) {
+      var d = a[j] - a[j-1];
+      if (d > 0) g += d; else l -= d;
+    }
+    if (l === 0) return 100;
+    var rs = (g / n) / (l / n);
+    return +(100 - 100 / (1 + rs)).toFixed(1);
+  });
+}
+function calcATR(prices, n) {
+  n = n || 14;
+  var r = [];
+  for (var i = 0; i < prices.length; i++) {
+    var tr = i === 0 ? prices[i] * 0.01 : Math.abs(prices[i] - prices[i-1]);
+    r.push(i < n ? tr : (r[i-1] * (n-1) + tr) / n);
+  }
+  return r;
+}
+function calcADX(prices) {
+  return prices.map(function(_, i) {
+    return Math.min(60, 14 + i * 0.025 + (Math.random() - 0.5) * 8);
+  });
+}
+function calcBoll(prices, n) {
+  n = n || 20;
+  return prices.map(function(_, i) {
+    if (i < n - 1) return { upper: null, lower: null, width: 0.12 };
+    var sl = prices.slice(i - n + 1, i + 1);
+    var mean = sl.reduce(function(a,b){ return a+b; }, 0) / n;
+    var sd = Math.sqrt(sl.map(function(x){ return (x-mean)*(x-mean); }).reduce(function(a,b){ return a+b; }, 0) / n);
+    return { upper: mean + 2*sd, lower: mean - 2*sd, width: +(4*sd/mean).toFixed(4) };
+  });
+}
+function calcOBV(prices, vols) {
+  var o = [0];
+  for (var i = 1; i < prices.length; i++)
+    o.push(o[i-1] + (prices[i] >= prices[i-1] ? vols[i] : -vols[i]));
+  return o;
+}
+
+/* ════════════════════════════════════════════
+   PRICE GENERATOR
+════════════════════════════════════════════ */
+function genPrices(n, cond) {
+  var trendMap  = { bull:0.0005, sideways:0.00003, bear:-0.0005, volatile:0.0002, random:0.0002 };
+  var volMap    = { bull:0.013,  sideways:0.009,   bear:0.020,   volatile:0.030,  random:0.016  };
+  var trend = trendMap[cond] || 0.0003;
+  var vol   = volMap[cond]   || 0.015;
+  var prices = [], opens = [], highs = [], lows = [], vols = [];
+  var p = 1000;
+  for (var i = 0; i < n; i++) {
+    var chg = (Math.random() - 0.47) * vol * 2 + trend;
+    var op = p;
+    p = p * (1 + chg);
+    opens.push(+op.toFixed(2));
+    prices.push(+p.toFixed(2));
+    highs.push(+(Math.max(op, p) * (1 + Math.random() * vol * 0.4)).toFixed(2));
+    lows.push(+(Math.min(op, p) * (1 - Math.random() * vol * 0.4)).toFixed(2));
+    vols.push(Math.floor(800000 + Math.random() * 3200000));
+  }
+  return { prices: prices, opens: opens, highs: highs, lows: lows, vols: vols };
+}
+
+/* ════════════════════════════════════════════
+   CORE SIMULATION
+════════════════════════════════════════════ */
+function simulate(p) {
+  var N        = p.N;
+  var capital  = p.capital;
+  var riskPct  = p.riskPct;
+  var atrMult  = p.atrMult;
+  var rrTgt    = p.rrTgt;
+  var maxDDPct = p.maxDDPct;
+  var brok     = p.brok;
+  var rsiMin   = p.rsiMin;
+  var rsiMax   = p.rsiMax;
+  var adxMin   = p.adxMin;
+  var volMin   = p.volMin;
+  var minConf  = p.minConf;
+  var ex1Pct   = p.ex1Pct;
+  var ex2Pct   = p.ex2Pct;
+  var maxHold  = p.maxHold;
+  var strategy = p.strategy;
+  var trailType= p.trailType;
+  var cond     = p.cond;
+  var slip     = p.slip;
+  var chkVix   = p.chkVix;
+  var chkFii   = p.chkFii;
+  var chkTax   = p.chkTax;
+
+  var D = genPrices(N, cond);
+  var PR = D.prices, OP = D.opens, HI = D.highs, LO = D.lows, VO = D.vols;
+  var avgVol = VO.reduce(function(a,b){return a+b;},0) / VO.length;
+
+  var SMA50  = calcSMA(PR, 50);
+  var SMA200 = calcSMA(PR, Math.min(200, N));
+  var EMA21  = calcEMA(PR, 21);
+  var EMA9   = calcEMA(PR, 9);
+  var RSI    = calcRSI(PR, 14);
+  var ATR    = calcATR(PR, 14);
+  var ADX    = calcADX(PR);
+  var BOLL   = calcBoll(PR, 20);
+  var OBV    = calcOBV(PR, VO);
+  var VWAP   = PR.map(function(p,i){ return (OP[i]+HI[i]+LO[i]+p)/4; });
+
+  var bbWidths = BOLL.map(function(b){ return b.width; }).filter(function(w){ return w>0; });
+  var bbMin = bbWidths.length ? bbWidths.slice(0, Math.max(20, Math.floor(bbWidths.length/2))).reduce(function(a,b){ return Math.min(a,b); }, 1) : 0.04;
+
+  var equity = [capital], bnh = [capital];
+  var trades = [], log = [], monthlyMap = {};
+  var cash = capital, peakEq = capital, maxDD = 0;
+  var inTrade = false, entryP = 0, stopL = 0, t1 = 0, t2 = 0, qty = 0;
+  var tradeDay = 0, didT1 = false, didT2 = false, trailHi = 0;
+  var wStreak = 0, lStreak = 0, mxWS = 0, mxLS = 0;
+  var sCounts = { trend: 0, momentum: 0, volume: 0, strat: 0 };
+
+  for (var i = 55; i < N; i++) {
+    var pr = PR[i];
+    var mo = Math.floor(i / 21);
+    if (!monthlyMap[mo]) monthlyMap[mo] = { s: cash, e: cash };
+    monthlyMap[mo].e = cash;
+
+    var vix = 12 + 7 * Math.sin(i / 55) + Math.random() * 5;
+    var fiiFactor = (chkFii && Math.sin(i / 25) < -0.6) ? 0.6 : 1.0;
+
+    if (!inTrade) {
+      if (chkVix && vix > 20) { equity.push(+cash.toFixed(0)); bnh.push(+(capital*pr/PR[55]).toFixed(0)); continue; }
+
+      var conf = 0, sigs = [];
+
+      /* Trend signals */
+      if (SMA50[i]  && pr > SMA50[i])  { conf++; sigs.push('above SMA50');   sCounts.trend++; }
+      if (SMA200[i] && pr > SMA200[i]) { conf++; sigs.push('above SMA200');  sCounts.trend++; }
+      if (EMA9[i] > EMA21[i])          { conf++; sigs.push('EMA9 > EMA21');  sCounts.trend++; }
+      if (pr > VWAP[i])                { conf++; sigs.push('above VWAP');    sCounts.trend++; }
+      if (ADX[i] >= adxMin)            { conf++; sigs.push('ADX ' + Math.round(ADX[i])); sCounts.trend++; }
+
+      /* Momentum signals */
+      if (RSI[i] >= rsiMin && RSI[i] <= rsiMax) { conf++; sigs.push('RSI ' + RSI[i]); sCounts.momentum++; }
+      if (i > 1 && RSI[i] > RSI[i-1] && RSI[i] > 50) { conf++; sigs.push('RSI rising'); sCounts.momentum++; }
+      if (i >= 5 && OBV[i] > OBV[i-5]) { conf++; sigs.push('OBV rising'); sCounts.momentum++; }
+
+      /* Volume signals */
+      var vr = VO[i] / avgVol;
+      if (vr >= volMin) { conf++; sigs.push('Vol ' + vr.toFixed(1) + 'x'); sCounts.volume++; }
+
+      /* Strategy-specific signals (+2 each — high conviction) */
+      if (strategy === 'ema_pullback') {
+        if (i > 4 && LO[i-1] <= EMA21[i-1] && pr > EMA21[i] && SMA50[i] && pr > SMA50[i])
+          { conf += 2; sigs.push('EMA21 retest ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'orb') {
+        var orbHi = Math.max.apply(null, HI.slice(Math.max(0,i-6), i));
+        if (pr > orbHi && VO[i] > avgVol * 1.4)
+          { conf += 2; sigs.push('ORB break ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'vwap_bounce') {
+        if (LO[i] <= VWAP[i] && pr > VWAP[i] && EMA9[i] > EMA21[i])
+          { conf += 2; sigs.push('VWAP bounce ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'squeeze') {
+        if (BOLL[i].width && BOLL[i].width < bbMin * 1.4 && VO[i] > avgVol * 1.8)
+          { conf += 2; sigs.push('BB squeeze break ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'order_block') {
+        var prevRed = i > 6 && OP[i-5] > PR[i-5];
+        var bigMove = i > 4 && PR[i-1] / PR[i-5] > 1.025;
+        if (prevRed && bigMove && pr >= PR[i-5] && pr <= OP[i-5])
+          { conf += 2; sigs.push('Order block ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'bear_trap') {
+        var brokeSupport = i > 3 && LO[i-1] < SMA50[i-1];
+        var recovered    = pr > SMA50[i] && VO[i] > avgVol * 1.5;
+        if (brokeSupport && recovered)
+          { conf += 2; sigs.push('Bear trap ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'post_earnings') {
+        /* Simulates earnings beat every ~60 days */
+        var earnDay = (i % 63 === 0);
+        if (earnDay && RSI[i] > 55 && VO[i] > avgVol * 2.5)
+          { conf += 3; sigs.push('Earnings beat + drift ✓'); sCounts.strat += 3; }
+        if ((i-2) % 63 === 0 && pr > EMA9[i] && VO[i] > avgVol * 1.3)
+          { conf += 2; sigs.push('Post-earn pullback buy ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'sector_catchup') {
+        /* Sector strength proxy: OBV accelerating + lagging price */
+        var sectorStrong = i > 10 && OBV[i] > OBV[i-10] * 1.15;
+        var lagging = pr < SMA50[i] * 1.03 && pr > SMA50[i];
+        if (sectorStrong && lagging && VO[i] > avgVol * 1.2)
+          { conf += 2; sigs.push('Sector catch-up ✓'); sCounts.strat += 2; }
+
+      } else if (strategy === 'combined') {
+        /* Combined: requires a stronger multi-signal burst */
+        if (SMA50[i] && pr > SMA50[i] && EMA9[i] > EMA21[i] && RSI[i] > 52 && VO[i] > avgVol * 1.5)
+          { conf += 2; sigs.push('Combined burst ✓'); sCounts.strat += 2; }
+      }
+
+      /* Fire trade if enough confirmations */
+      if (conf >= minConf && cash > 1000) {
+        var stopDist = ATR[i] * atrMult;
+        if (stopDist <= 0) { equity.push(+cash.toFixed(0)); bnh.push(+(capital*pr/PR[55]).toFixed(0)); continue; }
+        var slipAmt = pr * (slip / 10000);
+        var entryAct = +(pr + slipAmt).toFixed(2);
+        var riskAmt  = cash * riskPct * fiiFactor;
+        var calcQty  = Math.floor(riskAmt / stopDist);
+        if (calcQty < 1) calcQty = 1;
+        var cost = calcQty * entryAct + brok;
+        if (cost > cash) calcQty = Math.max(1, Math.floor((cash - brok) / entryAct));
+        if (calcQty < 1) { equity.push(+cash.toFixed(0)); bnh.push(+(capital*pr/PR[55]).toFixed(0)); continue; }
+
+        inTrade = true;
+        entryP  = entryAct;
+        stopL   = +(pr - stopDist).toFixed(2);
+        t1      = +(pr + stopDist * rrTgt * 0.6).toFixed(2);
+        t2      = +(pr + stopDist * rrTgt).toFixed(2);
+        qty     = calcQty;
+        tradeDay= i;
+        didT1   = false; didT2 = false;
+        trailHi = pr;
+        cash   -= qty * entryP + brok;
+
+        log.push({ day: i, type: 'buy',
+          msg: strategy.replace(/_/g,' ').toUpperCase() + ' — BUY ' + qty + ' shares @ ₹' + entryP +
+               ' | SL ₹' + stopL.toFixed(0) + ' | T1 ₹' + t1.toFixed(0) + ' | T2 ₹' + t2.toFixed(0) +
+               ' | signals: ' + sigs.slice(0, 5).join(', ') });
+      }
+
+    } else {
+      /* ── Inside a trade ── */
+      var slipOut = pr * (slip / 10000);
+      if (pr > trailHi) trailHi = pr;
+
+      /* Exit 1 — partial at T1 */
+      if (!didT1 && pr >= t1 && qty > 1) {
+        var q1 = Math.max(1, Math.floor(qty * ex1Pct));
+        cash += q1 * (pr - slipOut) - brok;
+        qty -= q1; didT1 = true;
+        stopL = entryP; /* move stop to breakeven */
+        log.push({ day: i, type: 'exit',
+          msg: 'PARTIAL EXIT ' + Math.round(ex1Pct*100) + '% (' + q1 + ' shares) @ ₹' + pr.toFixed(0) + ' → stop moved to breakeven ₹' + entryP.toFixed(0) });
+      }
+
+      /* Exit 2 — partial at T2 */
+      if (!didT2 && qty > 1 && pr >= t2) {
+        var q2 = Math.max(1, Math.floor(qty * ex2Pct));
+        cash += q2 * (pr - slipOut) - brok;
+        qty -= q2; didT2 = true;
+        log.push({ day: i, type: 'exit',
+          msg: 'PARTIAL EXIT ' + Math.round(ex2Pct*100) + '% (' + q2 + ' shares) @ ₹' + pr.toFixed(0) + ' → trailing stop activated' });
+      }
+
+      /* Compute trailing stop for remaining */
+      var trailStop = stopL;
+      if (didT2) {
+        if (trailType === 'atr')    trailStop = Math.max(stopL, trailHi - 2 * ATR[i]);
+        else if (trailType === 'ema21') trailStop = Math.max(stopL, EMA21[i]);
+        else if (trailType === 'swing') {
+          var swLow = Math.min.apply(null, LO.slice(Math.max(0, i-5), i));
+          trailStop = Math.max(stopL, swLow);
+        }
+      }
+
+      /* Close conditions */
+      var hitStop = pr <= trailStop;
+      var hitRSI  = RSI[i] > 78;
+      var hitTime = (i - tradeDay) >= maxHold;
+      var closeNow = hitStop || hitRSI || hitTime;
+
+      if (closeNow && qty > 0) {
+        var exitAct = +(pr - slipOut).toFixed(2);
+        var rawPnl  = (exitAct - entryP) * qty;
+        var pnl     = chkTax && rawPnl > 0 ? rawPnl * 0.8 : rawPnl;
+        cash += qty * exitAct - brok;
+        var pnlPct  = +((exitAct - entryP) / entryP * 100).toFixed(2);
+        var won     = pnl > 0;
+        var reason  = hitStop ? 'stop' : hitRSI ? 'RSI overbought' : 'max hold days';
+
+        if (won) { wStreak++; lStreak = 0; if (wStreak > mxWS) mxWS = wStreak; }
+        else     { lStreak++; wStreak = 0; if (lStreak > mxLS) mxLS = lStreak; }
+
+        trades.push({ day: i, entryDay: tradeDay, entryP: entryP, exitP: exitAct,
+          qty: qty, pnl: +pnl.toFixed(0), pnlPct: pnlPct, won: won,
+          days: i - tradeDay, strategy: strategy, reason: reason });
+
+        log.push({ day: i, type: won ? 'win' : 'loss',
+          msg: (won ? 'WIN ✓' : 'LOSS ✗') + ' EXIT ' + qty + ' shares @ ₹' + exitAct.toFixed(0) +
+               ' | P&L ₹' + (pnl >= 0 ? '+' : '') + Math.round(pnl).toLocaleString('en-IN') +
+               ' (' + (pnlPct >= 0 ? '+' : '') + pnlPct + '%) | ' + (i-tradeDay) + ' days | reason: ' + reason });
+
+        inTrade = false; qty = 0;
+      }
+    }
+
+    if (cash > peakEq) peakEq = cash;
+    var dd = (peakEq - cash) / peakEq;
+    if (dd > maxDD) maxDD = dd;
+
+    equity.push(+cash.toFixed(0));
+    bnh.push(+(capital * pr / PR[55]).toFixed(0));
+  }
+
+  var monthly = Object.values(monthlyMap).map(function(m){
+    return +((m.e - m.s) / (m.s || 1) * 100).toFixed(2);
+  });
+
+  var finalEq = equity[equity.length - 1];
+  var totalRet = (finalEq - capital) / capital * 100;
+  var bnhRet   = (bnh[bnh.length-1] - capital) / capital * 100;
+  var wins     = trades.filter(function(t){ return t.won; });
+  var losses   = trades.filter(function(t){ return !t.won; });
+  var winRate  = trades.length ? wins.length / trades.length * 100 : 0;
+  var grossW   = wins.reduce(function(a,t){ return a+t.pnl; }, 0);
+  var grossL   = Math.abs(losses.reduce(function(a,t){ return a+t.pnl; }, 0));
+  var pf       = grossL > 0 ? grossW / grossL : (grossW > 0 ? 99 : 0);
+  var avgW     = wins.length   ? wins.reduce(function(a,t){ return a+t.pnlPct; },0) / wins.length   : 0;
+  var avgL     = losses.length ? losses.reduce(function(a,t){ return a+t.pnlPct; },0) / losses.length : 0;
+  var expect   = (winRate/100*avgW) + ((1-winRate/100)*avgL);
+  var avgHold  = trades.length ? trades.reduce(function(a,t){ return a+t.days; },0) / trades.length : 0;
+  var sharpe   = maxDD > 0 ? (totalRet/100) / (maxDD * Math.sqrt(Math.max(1, trades.length/52))) : 0;
+
+  return {
+    equity: equity, bnh: bnh, trades: trades, log: log, monthly: monthly,
+    m: { totalRet: totalRet, bnhRet: bnhRet, winRate: winRate, pf: pf,
+      avgW: avgW, avgL: avgL, expect: expect, maxDD: maxDD*100,
+      sharpe: sharpe, tradeCount: trades.length, finalEq: finalEq, capital: capital,
+      grossW: grossW, grossL: grossL, avgHold: avgHold, mxWS: mxWS, mxLS: mxLS,
+      sCounts: sCounts }
+  };
+}
+
+/* ════════════════════════════════════════════
+   COLLECT PARAMS FROM UI
+════════════════════════════════════════════ */
+function getParams() {
+  return {
+    N:        gi('candles'),
+    capital:  parseFloat(g('capital').value) || 500000,
+    riskPct:  gv('risk_pct') / 100,
+    atrMult:  gv('atr_mult'),
+    rrTgt:    gv('rr'),
+    maxDDPct: gv('max_dd') / 100,
+    brok:     parseFloat(g('brokerage').value) || 20,
+    rsiMin:   gi('rsi_min'),
+    rsiMax:   gi('rsi_max'),
+    adxMin:   gi('adx_min'),
+    volMin:   gv('vol_min'),
+    minConf:  gi('confirms'),
+    ex1Pct:   gv('exit1') / 100,
+    ex2Pct:   gv('exit2') / 100,
+    maxHold:  gi('max_hold'),
+    strategy: g('strategy').value,
+    trailType:g('trail_type').value,
+    cond:     g('mkt_cond').value,
+    slip:     parseFloat(g('slippage').value) || 5,
+    chkVix:   g('chk_vix').checked,
+    chkFii:   g('chk_fii').checked,
+    chkTax:   g('chk_tax').checked,
+  };
+}
+
+/* ════════════════════════════════════════════
+   RUN BACKTEST
+════════════════════════════════════════════ */
+function runBacktest() {
+  var btn = g('run-btn');
+  btn.textContent = '⟳ Running…';
+  g('status-txt').textContent = 'Simulating…';
+  setTimeout(function() {
+    var p = getParams();
+    var r = simulate(p);
+    btn.textContent = '▶ Run Backtest';
+    g('status-txt').textContent = r.trades.length + ' trades · ' + r.m.totalRet.toFixed(1) + '% return';
+    renderResults(r, p);
+    renderTrades(r);
+    renderBreakdown(r, p);
+    switchToTab('results');
+  }, 60);
+}
+
+/* ════════════════════════════════════════════
+   CHART OPTIONS HELPER
+════════════════════════════════════════════ */
+function co(extra) {
+  var base = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: '#7a8fa6', font: { size: 11 }, padding: 10 } },
+               tooltip: { bodyFont: { size: 11 } } },
+    scales: {
+      x: { ticks: { color: '#3d5166', font: { size: 10 }, maxTicksLimit: 8 }, grid: { color: '#1c2a3a' } },
+      y: { ticks: { color: '#3d5166', font: { size: 10 } }, grid: { color: '#1c2a3a' } }
+    }
+  };
+  return extra ? Object.assign({}, base, extra) : base;
+}
+
+/* ════════════════════════════════════════════
+   RENDER RESULTS
+════════════════════════════════════════════ */
+function renderResults(r, p) {
+  var m = r.m;
+  var s = function(v){ return v >= 0 ? '+' : ''; };
+  var cl = function(v){ return v >= 0 ? 'g' : 'r'; };
+
+  var html = '<div class="metric-grid">' +
+    mc(cl(m.totalRet), 'Total return', s(m.totalRet)+m.totalRet.toFixed(1)+'%', cl(m.totalRet), 'B&H: '+s(m.bnhRet)+m.bnhRet.toFixed(1)+'%') +
+    mc(cl(m.totalRet-m.bnhRet), 'Alpha vs buy & hold', s(m.totalRet-m.bnhRet)+(m.totalRet-m.bnhRet).toFixed(1)+'%', cl(m.totalRet-m.bnhRet), 'Strategy outperformance') +
+    mc('b', 'Win rate', m.winRate.toFixed(0)+'%', 'b', r.trades.filter(function(t){return t.won;}).length+'W / '+r.trades.filter(function(t){return !t.won;}).length+'L') +
+    mc(m.pf>=1.5?'g':m.pf>=1?'a':'r', 'Profit factor', m.pf.toFixed(2), m.pf>=1.5?'g':m.pf>=1?'a':'r', 'Gross win ÷ gross loss') +
+    mc('r', 'Max drawdown', m.maxDD.toFixed(1)+'%', 'r', 'Peak to trough') +
+    mc(m.sharpe>=1?'g':m.sharpe>=0.5?'a':'r', 'Sharpe ratio', m.sharpe.toFixed(2), m.sharpe>=1?'g':m.sharpe>=0.5?'a':'r', 'Risk-adjusted return') +
+    mc(m.expect>=0?'g':'r', 'Expectancy/trade', s(m.expect)+m.expect.toFixed(2)+'%', m.expect>=0?'g':'r', m.expect>=0?'Positive edge':'No edge') +
+    mc('n', 'Total trades', m.tradeCount+'', 'w', 'Avg hold: '+m.avgHold.toFixed(1)+' days') +
+    mc('n', 'Avg win', '+'+m.avgW.toFixed(1)+'%', 'g', 'Per winning trade') +
+    mc('n', 'Avg loss', m.avgL.toFixed(1)+'%', 'r', 'Per losing trade') +
+    mc('n', 'Max win streak', m.mxWS+'', 'w', 'Consecutive wins') +
+    mc(cl(m.totalRet), 'Final capital', '₹'+Math.round(m.finalEq).toLocaleString('en-IN'), cl(m.totalRet), 'Started ₹'+Math.round(m.capital).toLocaleString('en-IN')) +
+    '</div>' +
+    '<div class="chart-card"><div class="ct">Equity curve — strategy vs buy &amp; hold</div><div class="cw" style="height:230px"><canvas id="eq-ch"></canvas></div></div>' +
+    '<div class="crow"><div class="chart-card"><div class="ct">Monthly returns (%)</div><div class="cw" style="height:170px"><canvas id="mo-ch"></canvas></div></div>' +
+    '<div class="chart-card"><div class="ct">Win / loss P&L distribution</div><div class="cw" style="height:170px"><canvas id="dist-ch"></canvas></div></div></div>' +
+    '<div class="crow"><div class="chart-card"><div class="ct">Drawdown curve (%)</div><div class="cw" style="height:150px"><canvas id="dd-ch"></canvas></div></div>' +
+    '<div class="chart-card"><div class="ct">Trade holding periods (days)</div><div class="cw" style="height:150px"><canvas id="hold-ch"></canvas></div></div></div>';
+
+  g('results-content').innerHTML = html;
+
+  var labels = r.equity.map(function(_, i){ return 'D'+i; });
+  dChart('eq');
+  CH.eq = new Chart(g('eq-ch').getContext('2d'), { type:'line', data:{
+    labels: labels,
+    datasets:[
+      { label:'Strategy', data:r.equity, borderColor:'#2f80ed', backgroundColor:'rgba(47,128,237,.08)', borderWidth:2, pointRadius:0, fill:true, tension:0.3 },
+      { label:'Buy & Hold', data:r.bnh, borderColor:'#3d5166', borderWidth:1.5, pointRadius:0, fill:false, tension:0.3, borderDash:[5,5] }
+    ]}, options: co({ plugins:{ legend:{ labels:{ color:'#7a8fa6', font:{size:11}, padding:10 } },
+      tooltip:{ callbacks:{ label: function(ctx){ return ctx.dataset.label+': ₹'+Math.round(ctx.raw).toLocaleString('en-IN'); } } } },
+      scales:{ x:{ ticks:{ color:'#3d5166', font:{size:10}, maxTicksLimit:8 }, grid:{ color:'#1c2a3a' } },
+               y:{ ticks:{ color:'#3d5166', font:{size:10}, callback: function(v){ return '₹'+Math.round(v/1000)+'K'; } }, grid:{ color:'#1c2a3a' } } }
+    }) });
+
+  dChart('mo');
+  CH.mo = new Chart(g('mo-ch').getContext('2d'), { type:'bar', data:{
+    labels: r.monthly.map(function(_,i){ return 'M'+(i+1); }),
+    datasets:[{ label:'Return %', data:r.monthly, backgroundColor:r.monthly.map(function(v){ return v>=0?'rgba(39,174,96,.7)':'rgba(231,76,60,.7)'; }), borderRadius:3, borderWidth:0 }]},
+    options: co({ plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#3d5166', font:{size:9}, maxTicksLimit:14 }, grid:{ color:'#1c2a3a' } }, y:{ ticks:{ color:'#3d5166', font:{size:10}, callback:function(v){ return v+'%'; } }, grid:{ color:'#1c2a3a' } } } }) });
+
+  var bins = [-20,-15,-10,-5,-2,0,2,5,10,15,20,30];
+  var wBin = bins.map(function(b){ return r.trades.filter(function(t){ return t.won && t.pnlPct>=b && t.pnlPct<b+5; }).length; });
+  var lBin = bins.map(function(b){ return r.trades.filter(function(t){ return !t.won && t.pnlPct>=b-5 && t.pnlPct<b; }).length; });
+  dChart('dist');
+  CH.dist = new Chart(g('dist-ch').getContext('2d'), { type:'bar', data:{
+    labels: bins.map(function(b){ return (b>0?'+':'')+b+'%'; }),
+    datasets:[
+      { label:'Wins',   data:wBin, backgroundColor:'rgba(39,174,96,.7)', borderRadius:3, borderWidth:0 },
+      { label:'Losses', data:lBin.map(function(v){ return -v; }), backgroundColor:'rgba(231,76,60,.7)', borderRadius:3, borderWidth:0 }
+    ]}, options: co() });
+
+  /* Drawdown curve */
+  var pkEq = r.equity[0];
+  var ddArr = r.equity.map(function(e){ if(e>pkEq)pkEq=e; return +((pkEq-e)/pkEq*100).toFixed(2); });
+  dChart('dd');
+  CH.dd = new Chart(g('dd-ch').getContext('2d'), { type:'line', data:{
+    labels:labels,
+    datasets:[{ label:'Drawdown %', data:ddArr, borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,.1)', borderWidth:1.5, pointRadius:0, fill:true, tension:0.2 }]},
+    options: co({ plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ color:'#3d5166', font:{size:10}, maxTicksLimit:8 }, grid:{ color:'#1c2a3a' } }, y:{ ticks:{ color:'#3d5166', font:{size:10}, callback:function(v){ return v+'%'; } }, grid:{ color:'#1c2a3a' } } } }) });
+
+  /* Hold period */
+  var hBins=[1,2,3,5,7,10,15,20,30,45,60];
+  var hCnt=hBins.map(function(b){ return r.trades.filter(function(t){ return t.days>=b&&t.days<b+Math.ceil(b*.6); }).length; });
+  dChart('hold');
+  CH.hold = new Chart(g('hold-ch').getContext('2d'), { type:'bar', data:{
+    labels:hBins.map(function(b){ return b+'d'; }),
+    datasets:[{ label:'Trades', data:hCnt, backgroundColor:'rgba(47,128,237,.6)', borderRadius:3, borderWidth:0 }]},
+    options: co({ plugins:{ legend:{ display:false } } }) });
+}
+
+/* metric card helper */
+function mc(topCls, label, val, valCls, sub) {
+  return '<div class="mc ' + topCls + '"><div class="ml">' + label + '</div><div class="mv ' + valCls + '">' + val + '</div><div class="ms">' + sub + '</div></div>';
+}
+
+/* ════════════════════════════════════════════
+   RENDER TRADE LOG
+════════════════════════════════════════════ */
+function renderTrades(r) {
+  if (!r.trades.length) {
+    g('trades-content').innerHTML = '<div class="empty"><div style="font-size:36px">📭</div><h3>No trades generated</h3><p>Relax signal filters or reduce min confirmations.</p></div>';
+    return;
+  }
+  var sorted = r.trades.slice().reverse();
+  var rows = sorted.slice(0, 120).map(function(t) {
+    var stratLabel = t.strategy.replace(/_/g,' ');
+    return '<tr>' +
+      '<td>D' + t.entryDay + '→D' + t.day + '</td>' +
+      '<td>' + stratLabel + '</td>' +
+      '<td>₹' + t.entryP.toFixed(0) + '</td>' +
+      '<td>₹' + t.exitP.toFixed(0) + '</td>' +
+      '<td class="cr">' + t.qty + '</td>' +
+      '<td class="cr ' + (t.pnl>=0?'pos':'neg') + '">' + (t.pnl>=0?'+':'') + '₹' + Math.abs(t.pnl).toLocaleString('en-IN') + '</td>' +
+      '<td class="cr ' + (t.pnlPct>=0?'pos':'neg') + '">' + (t.pnlPct>=0?'+':'') + t.pnlPct + '%</td>' +
+      '<td class="cr">' + t.days + 'd</td>' +
+      '<td><span class="bdg bdg-exit">' + t.reason + '</span></td>' +
+      '<td><span class="bdg ' + (t.won?'bdg-win':'bdg-loss') + '">' + (t.won?'WIN':'LOSS') + '</span></td>' +
+      '</tr>';
+  }).join('');
+
+  var logRows = r.log.slice(-80).reverse().map(function(l) {
+    return '<div class="log-row">' +
+      '<span class="log-day">D' + l.day + '</span>' +
+      '<span class="bdg bdg-' + (l.type==='buy'?'buy':l.type==='win'?'win':l.type==='loss'?'loss':'exit') + '" style="flex-shrink:0">' + l.type.toUpperCase() + '</span>' +
+      '<span class="log-msg">' + l.msg + '</span>' +
+      '</div>';
+  }).join('');
+
+  g('trades-content').innerHTML =
+    '<div class="tbl-card"><div class="tbl-head"><span class="tbl-title">Trade log</span><span class="tbl-badge">' + r.trades.length + ' trades — showing ' + Math.min(120, r.trades.length) + '</span></div>' +
+    '<div style="overflow-x:auto"><table class="dtable"><thead><tr>' +
+    '<th>Period</th><th>Strategy</th><th>Entry ₹</th><th>Exit ₹</th><th class="cr">Qty</th><th class="cr">P&L ₹</th><th class="cr">P&L %</th><th class="cr">Days</th><th>Exit reason</th><th>Result</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
+    '<div class="log-wrap"><div class="log-hdr">Signal log — last 80 events</div><div class="log-body">' + logRows + '</div></div>';
+}
+
+/* ════════════════════════════════════════════
+   RENDER BREAKDOWN
+════════════════════════════════════════════ */
+var STRAT_LABELS = {
+  ema_pullback:'EMA Pullback — price retests SMA21, bounces in uptrend',
+  orb:'Opening Range Breakout — break above first 30-min high with volume',
+  vwap_bounce:'VWAP Bounce — price touches VWAP and recovers above it',
+  squeeze:'Bollinger Squeeze — band width at 6-month low then explodes',
+  order_block:'Order Block — price returns to last red candle before big up-move',
+  bear_trap:'Bear Trap — price breaks support then reverses back above it',
+  post_earnings:'Post-Earnings Drift — buy 2–3 days after strong earnings beat',
+  sector_catchup:'Sector Catch-Up — lagging quality stock in strong sector',
+  combined:'Combined — multiple strategies must align simultaneously'
+};
+
+function renderBreakdown(r, p) {
+  var m = r.m;
+  var assess = function(val, good, ok) {
+    if (val >= good) return '✓ Strong';
+    if (val >= ok) return '⚠ Marginal';
+    return '✗ Needs work';
+  };
+
+  var ruleCards = [
+    { cls:'', name:'Strategy being tested', desc:'What entry pattern triggers a trade', val:STRAT_LABELS[p.strategy]||p.strategy },
+    { cls:'', name:'Min confirmations', desc:'Signals from different categories needed before entry fires', val:p.minConf + ' required → ' + m.tradeCount + ' trades taken' },
+    { cls:'', name:'RSI zone', desc:'Only enter when RSI is in healthy momentum zone — not overbought', val:'Between ' + p.rsiMin + ' and ' + p.rsiMax },
+    { cls:'', name:'ADX filter', desc:'Only trade when trend has sufficient measured strength', val:'ADX above ' + p.adxMin },
+    { cls:'', name:'Volume filter', desc:'Institutional participation required before any entry', val:'At least ' + p.volMin.toFixed(1) + '× the 20-day average volume' },
+    { cls:'a', name:'Position sizing', desc:'Risk-based: Qty = (Capital × Risk%) ÷ ATR stop. Never guessed.', val:(p.riskPct*100).toFixed(2) + '% risk = max ₹' + Math.round(p.capital*p.riskPct).toLocaleString('en-IN') + ' at risk per trade' },
+    { cls:'a', name:'Stop loss', desc:'ATR-based, placed before entry. Non-negotiable.', val:'Entry − (' + p.atrMult + '× ATR14). Adapts to current volatility.' },
+    { cls:'a', name:'Risk:Reward target', desc:'Mathematical edge required before any trade', val:'1:' + p.rrTgt + ' → T1 at ' + (p.rrTgt*0.6).toFixed(1) + 'R, T2 at ' + p.rrTgt + 'R' },
+    { cls:'g', name:'Scale exit 1', desc:'Book partial profit at T1, move stop to breakeven', val:Math.round(p.ex1Pct*100) + '% of position sold at 1R profit' },
+    { cls:'g', name:'Scale exit 2', desc:'Book second tranche at T2, activate trailing stop', val:Math.round(p.ex2Pct*100) + '% of position sold at 2R profit' },
+    { cls:'g', name:'Trailing stop (exit 3)', desc:'Remaining position rides until market takes it out', val:{atr:'2× ATR trailing — adapts to volatility',ema21:'EMA21 trailing — exits on daily close below EMA21',swing:'Swing low trailing — follows each higher low',none:'Fixed target only — exits at T2'}[p.trailType] },
+    { cls:'r', name:'Monthly drawdown limit', desc:'Stop trading for the month if breached', val:p.maxDDPct*100 + '% limit | Actual max drawdown in this test: ' + m.maxDD.toFixed(1) + '%' },
+  ].map(function(c){ return '<div class="rule-card ' + c.cls + '"><div class="rn">' + c.name + '</div><div class="rd">' + c.desc + '</div><div class="rv">' + c.val + '</div></div>'; }).join('');
+
+  var tableRows = [
+    ['Total return', (m.totalRet>=0?'+':'')+m.totalRet.toFixed(1)+'%', (m.bnhRet>=0?'+':'')+m.bnhRet.toFixed(1)+'% (B&H)', m.totalRet>m.bnhRet?'✓ Outperforming':'✗ Underperforming'],
+    ['Win rate', m.winRate.toFixed(1)+'%', '45–55% target', m.winRate>=45?'✓ On target':'⚠ Below target'],
+    ['Profit factor', m.pf.toFixed(2), 'Above 1.5 = good', assess(m.pf,1.5,1)],
+    ['Max drawdown', m.maxDD.toFixed(1)+'%', 'Below 15% = safe', m.maxDD<=15?'✓ Acceptable':'⚠ Too high'],
+    ['Sharpe ratio', m.sharpe.toFixed(2), 'Above 1.0 = good', assess(m.sharpe,1,0.5)],
+    ['Expectancy/trade', (m.expect>=0?'+':'')+m.expect.toFixed(2)+'%', 'Positive = edge exists', m.expect>=0?'✓ Positive edge':'✗ No edge'],
+    ['Avg win / Avg loss', m.avgW.toFixed(1)+'% / '+m.avgL.toFixed(1)+'%', 'Ratio above 1.5:1', Math.abs(m.avgW/(m.avgL||1))>=1.5?'✓ Good ratio':'⚠ Improve exit management'],
+    ['Avg holding period', m.avgHold.toFixed(1)+' days', 'Matches trade type: '+g('trade_type').value, '—'],
+    ['Max win streak', m.mxWS+' trades', 'System consistency', '—'],
+    ['Max loss streak', m.mxLS+' trades', 'System robustness', m.mxLS<=4?'✓ Acceptable':'⚠ Review risk rules'],
+  ].map(function(r){ return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>'; }).join('');
+
+  /* Signal counts pie */
+  var sc = m.sCounts;
+
+  g('breakdown-content').innerHTML =
+    '<div class="rule-grid">' + ruleCards + '</div>' +
+    '<div class="crow" style="margin-top:14px">' +
+    '<div class="chart-card"><div class="ct">Signal category breakdown (total fires)</div><div class="cw" style="height:190px"><canvas id="sig-ch"></canvas></div></div>' +
+    '<div class="chart-card"><div class="ct">Exit reason distribution</div><div class="cw" style="height:190px"><canvas id="exit-ch"></canvas></div></div>' +
+    '</div>' +
+    '<div class="tbl-card"><div class="tbl-head"><span class="tbl-title">Performance summary &amp; assessment</span></div>' +
+    '<table class="dtable"><thead><tr><th>Metric</th><th>Value</th><th>Benchmark</th><th>Assessment</th></tr></thead><tbody>' + tableRows + '</tbody></table></div>';
+
+  dChart('sig');
+  CH.sig = new Chart(g('sig-ch').getContext('2d'), { type:'doughnut', data:{
+    labels:['Trend','Momentum','Volume','Strategy-specific'],
+    datasets:[{ data:[sc.trend,sc.momentum,sc.volume,sc.strat], backgroundColor:['#2f80ed','#27ae60','#f39c12','#8e44ad'], borderWidth:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#7a8fa6', font:{size:11}, padding:10, boxWidth:12 } } } } });
+
+  var reasons = r.trades.reduce(function(acc,t){ acc[t.reason]=(acc[t.reason]||0)+1; return acc; }, {});
+  dChart('exit');
+  CH.exit = new Chart(g('exit-ch').getContext('2d'), { type:'doughnut', data:{
+    labels:Object.keys(reasons),
+    datasets:[{ data:Object.values(reasons), backgroundColor:['#e74c3c','#f39c12','#7a8fa6'], borderWidth:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom', labels:{ color:'#7a8fa6', font:{size:11}, padding:10, boxWidth:12 } } } } });
+}
+
+/* ════════════════════════════════════════════
+   OPTIMISE
+════════════════════════════════════════════ */
+function runOpt(type) {
+  var base = getParams();
+  base.N = Math.min(base.N, 500); /* faster sweeps */
+  base.chkVix = false; base.chkFii = false;
+
+  var optCo = co();
+
+  if (type === 'risk') {
+    var risks = [0.25,0.5,0.75,1,1.25,1.5,2,2.5,3];
+    var rets = [], dds = [];
+    risks.forEach(function(rv) {
+      var p = Object.assign({}, base, { riskPct: rv/100 });
+      var r = simulate(p).m;
+      rets.push(+r.totalRet.toFixed(1));
+      dds.push(+r.maxDD.toFixed(1));
+    });
+    dChart('opt-risk');
+    CH['opt-risk'] = new Chart(g('opt-risk').getContext('2d'), { type:'line', data:{
+      labels: risks.map(function(v){ return v+'%'; }),
+      datasets:[
+        { label:'Return %', data:rets, borderColor:'#2f80ed', borderWidth:2, pointRadius:4, tension:0.3, fill:false },
+        { label:'Max DD %', data:dds, borderColor:'#e74c3c', borderWidth:2, pointRadius:4, tension:0.3, fill:false }
+      ]}, options: optCo });
+  } else if (type === 'rr') {
+    var rrs = [1,1.25,1.5,1.75,2,2.5,3,4,5];
+    var rets2 = [], wrs = [];
+    rrs.forEach(function(rv) {
+      var p = Object.assign({}, base, { rrTgt: rv });
+      var r = simulate(p).m;
+      rets2.push(+r.totalRet.toFixed(1));
+      wrs.push(+r.winRate.toFixed(1));
+    });
+    dChart('opt-rr');
+    CH['opt-rr'] = new Chart(g('opt-rr').getContext('2d'), { type:'line', data:{
+      labels: rrs.map(function(v){ return '1:'+v; }),
+      datasets:[
+        { label:'Return %', data:rets2, borderColor:'#27ae60', borderWidth:2, pointRadius:4, tension:0.3, fill:false },
+        { label:'Win rate %', data:wrs, borderColor:'#f39c12', borderWidth:2, pointRadius:4, tension:0.3, fill:false }
+      ]}, options: optCo });
+  } else if (type === 'conf') {
+    var confs = [1,2,3,4,5];
+    var rets3 = [], tcs = [];
+    confs.forEach(function(cv) {
+      var p = Object.assign({}, base, { minConf: cv });
+      var r = simulate(p);
+      rets3.push(+r.m.totalRet.toFixed(1));
+      tcs.push(r.m.tradeCount);
+    });
+    dChart('opt-conf');
+    CH['opt-conf'] = new Chart(g('opt-conf').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: confs.map(function(v){ return v+' conf'; }),
+        datasets: [
+          { label:'Return %', data:rets3, backgroundColor:'rgba(47,128,237,.7)', borderRadius:4, borderWidth:0, yAxisID:'y' },
+          { label:'# Trades', data:tcs,   backgroundColor:'rgba(243,156,18,.7)',  borderRadius:4, borderWidth:0, yAxisID:'y1' }
+        ]},
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ labels:{ color:'#7a8fa6', font:{size:11}, padding:10 } } },
+        scales:{
+          x: { ticks:{ color:'#3d5166', font:{size:10} }, grid:{ color:'#1c2a3a' } },
+          y: { ticks:{ color:'#3d5166', font:{size:10} }, grid:{ color:'#1c2a3a' }, position:'left' },
+          y1:{ ticks:{ color:'#f39c12', font:{size:10} }, grid:{ display:false }, position:'right', type:'linear' }
+        }}});
+  } else if (type === 'atr') {
+    var atrs = [0.5,0.75,1,1.25,1.5,1.75,2,2.5,3];
+    var rets4 = [], dds4 = [];
+    atrs.forEach(function(av) {
+      var p = Object.assign({}, base, { atrMult: av });
+      var r = simulate(p).m;
+      rets4.push(+r.totalRet.toFixed(1));
+      dds4.push(+r.maxDD.toFixed(1));
+    });
+    dChart('opt-atr');
+    CH['opt-atr'] = new Chart(g('opt-atr').getContext('2d'), { type:'line', data:{
+      labels: atrs.map(function(v){ return v+'×'; }),
+      datasets:[
+        { label:'Return %', data:rets4, borderColor:'#8e44ad', borderWidth:2, pointRadius:4, tension:0.3, fill:false },
+        { label:'Max DD %', data:dds4,  borderColor:'#e74c3c', borderWidth:2, pointRadius:4, tension:0.3, fill:false }
+      ]}, options: optCo });
+  }
+}
+</script>
+</body>
+</html>
